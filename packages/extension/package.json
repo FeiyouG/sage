@@ -1,0 +1,102 @@
+{
+  "name": "sage-cursor-extension",
+  "displayName": "Sage for Cursor",
+  "description": "Safety for Agents — ADR layer for Cursor Agent",
+  "version": "0.4.0",
+  "private": true,
+  "publisher": "gen-digital",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/avast/sage.git"
+  },
+  "license": "Apache-2.0",
+  "engines": {
+    "vscode": "^1.97.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:sage.enableProtection",
+    "onCommand:sage.disableProtection",
+    "onCommand:sage.openConfig",
+    "onCommand:sage.openAuditLog",
+    "onCommand:sage.showHookHealth"
+  ],
+  "files": [
+    "dist/cursor_extension.js",
+    "dist/cursor_extension.js.map",
+    "dist/sage-hook.cjs",
+    "dist/sage-hook.cjs.map",
+    "resources/**",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/cursor_extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "sage.enableProtection",
+        "title": "Sage: Enable protection"
+      },
+      {
+        "command": "sage.disableProtection",
+        "title": "Sage: Disable protection"
+      },
+      {
+        "command": "sage.openConfig",
+        "title": "Sage: Open config"
+      },
+      {
+        "command": "sage.openAuditLog",
+        "title": "Sage: Open audit log"
+      },
+      {
+        "command": "sage.showHookHealth",
+        "title": "Sage: Show hook health"
+      }
+    ],
+    "configuration": {
+      "title": "Sage",
+      "properties": {
+        "sage.cursor.scope": {
+          "type": "string",
+          "default": "user",
+          "enum": [
+            "workspace",
+            "user"
+          ],
+          "description": "Where Sage installs Cursor hooks."
+        },
+        "sage.hookRunnerPath": {
+          "type": "string",
+          "default": "",
+          "description": "Optional absolute path to a sage-hook runner script."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "pnpm -C ../core build && npm run clean && npm run sync:assets && node esbuild.config.cjs",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true});require('node:fs').rmSync('resources',{recursive:true,force:true});require('node:fs').rmSync('.vsce',{recursive:true,force:true})\"",
+    "sync:assets": "node scripts/sync-assets.mjs",
+    "pretest": "pnpm -C ../core build && npm run sync:assets && node esbuild.config.cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "package:cursor:vsix": "npm run build && pnpm dlx @vscode/vsce package -o ../../sage-cursor-extension.vsix --no-dependencies --allow-package-secrets github --allow-package-secrets slack",
+    "package:vscode:vsix": "npm run build && node scripts/package-vscode-vsix.mjs",
+    "package:vsix": "npm run package:cursor:vsix && npm run package:vscode:vsix"
+  },
+  "dependencies": {
+    "@sage/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.97.0",
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.0.0"
+  }
+}

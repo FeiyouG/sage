@@ -1,0 +1,257 @@
+# Command threat patterns for Sage
+# Author: Gen Digital Inc.
+# License: DRL-1.1 (see threats/LICENSE)
+# Schema: id, category, severity, confidence, action, pattern, match_on, title, expires_at, revoked
+
+# --- Pipe to shell (Remote Code Execution) ---
+- id: "CLT-CMD-001"
+  category: tool
+  severity: critical
+  confidence: 0.95
+  action: block
+  pattern: "curl\\s[^|]*\\|\\s*(bash|sh|zsh|ksh|dash)"
+  match_on: command
+  title: "Remote code execution via curl pipe to shell"
+  expires_at: null
+  revoked: false
+
+- id: "CLT-CMD-002"
+  category: tool
+  severity: critical
+  confidence: 0.95
+  action: block
+  pattern: "wget\\s[^|]*\\|\\s*(bash|sh|zsh|ksh|dash)"
+  match_on: command
+  title: "Remote code execution via wget pipe to shell"
+  expires_at: null
+  revoked: false
+
+# --- Reverse shells ---
+- id: "CLT-CMD-003"
+  category: tool
+  severity: critical
+  confidence: 0.90
+  action: block
+  pattern: "/dev/tcp/"
+  match_on: command
+  title: "Reverse shell via /dev/tcp"
+  expires_at: null
+  revoked: false
+
+- id: "CLT-CMD-004"
+  category: tool
+  severity: critical
+  confidence: 0.90
+  action: block
+  pattern: "\\bnc\\b.*\\s-e\\s"
+  match_on: command
+  title: "Reverse shell via netcat -e"
+  expires_at: null
+  revoked: false
+
+- id: "CLT-CMD-005"
+  category: tool
+  severity: critical
+  confidence: 0.85
+  action: block
+  pattern: "bash\\s+-i\\s+>\\s*&\\s*/dev/"
+  match_on: command
+  title: "Interactive reverse shell via bash"
+  expires_at: null
+  revoked: false
+
+# --- Destructive operations ---
+- id: "CLT-CMD-006"
+  category: tool
+  severity: critical
+  confidence: 0.95
+  action: block
+  pattern: "\\brm\\s+(-[a-zA-Z]*f[a-zA-Z]*\\s+)?(-[a-zA-Z]*r[a-zA-Z]*\\s+)?/\\s*$|\\brm\\s+(-[a-zA-Z]*r[a-zA-Z]*\\s+)?(-[a-zA-Z]*f[a-zA-Z]*\\s+)?/\\s*$|\\brm\\s+-[a-zA-Z]*rf[a-zA-Z]*\\s+/"
+  match_on: command
+  title: "Recursive forced deletion from root"
+  expires_at: null
+  revoked: false
+
+- id: "CLT-CMD-007"
+  category: tool
+  severity: critical
+  confidence: 0.95
+  action: block
+  pattern: "\\bmkfs\\b"
+  match_on: command
+  title: "Filesystem format command"
+  expires_at: null
+  revoked: false
+
+- id: "CLT-CMD-008"
+  category: tool
+  severity: high
+  confidence: 0.85
+  action: block
+  pattern: "\\bdd\\s+if=.*of=/dev/"
+  match_on: command
+  title: "Direct disk write via dd"
+  expires_at: null
+  revoked: false
+
+- id: "CLT-CMD-009"
+  category: tool
+  severity: critical
+  confidence: 0.90
+  action: block
+  pattern: "\\bshred\\b"
+  match_on: command
+  title: "Secure file destruction via shred"
+  expires_at: null
+  revoked: false
+
+# --- Download + execute chains ---
+- id: "CLT-CMD-010"
+  category: tool
+  severity: critical
+  confidence: 0.90
+  action: block
+  pattern: "(curl|wget)\\s[^&]*&&\\s*chmod\\s+\\+x"
+  match_on: command
+  title: "Download and execute chain"
+  expires_at: null
+  revoked: false
+
+# --- Privilege escalation ---
+- id: "CLT-CMD-011"
+  category: tool
+  severity: high
+  confidence: 0.80
+  action: require_approval
+  pattern: "\\bchmod\\s+777\\b"
+  match_on: command
+  title: "Overly permissive file permissions"
+  expires_at: null
+  revoked: false
+
+- id: "CLT-CMD-012"
+  category: tool
+  severity: high
+  confidence: 0.80
+  action: require_approval
+  pattern: "NOPASSWD"
+  match_on: command
+  title: "Passwordless sudo configuration"
+  expires_at: null
+  revoked: false
+
+# --- Data exfiltration ---
+- id: "CLT-CMD-013"
+  category: network_egress
+  severity: high
+  confidence: 0.80
+  action: require_approval
+  pattern: "curl\\s[^|;]*(-d|--data|--data-binary)\\s\\S*(/etc/passwd|/etc/shadow|\\.ssh/|id_rsa|credentials|secrets)"
+  match_on: command
+  title: "Possible data exfiltration of sensitive files"
+  expires_at: null
+  revoked: false
+
+# --- Privileged pipe to shell ---
+- id: "CLT-CMD-014"
+  category: tool
+  severity: critical
+  confidence: 0.95
+  action: block
+  pattern: "\\bsudo\\s+(curl|wget)\\s[^|]*\\|\\s*(bash|sh|zsh|ksh|dash)"
+  match_on: command
+  title: "Privileged pipe-to-shell (sudo curl/wget piped to shell)"
+  expires_at: null
+  revoked: false
+
+# --- Python one-liner with dangerous imports ---
+- id: "CLT-CMD-015"
+  category: tool
+  severity: high
+  confidence: 0.80
+  action: require_approval
+  pattern: "python[3]?\\s+-c\\s+[\"'][^\"']*\\b(os\\.system|subprocess|os\\.exec|os\\.popen|__import__)\\b"
+  match_on: command
+  title: "Python one-liner with dangerous imports"
+  expires_at: null
+  revoked: false
+
+# --- Indirect execution patterns ---
+- id: "CLT-CMD-016"
+  category: tool
+  severity: critical
+  confidence: 0.90
+  action: block
+  pattern: "\\bbash\\s+<\\(\\s*(curl|wget)\\b"
+  match_on: command
+  title: "Process substitution executing remote content"
+  expires_at: null
+  revoked: false
+
+- id: "CLT-CMD-017"
+  category: tool
+  severity: high
+  confidence: 0.85
+  action: block
+  pattern: "\\beval\\b[^;|]*\\b(curl|wget)\\b"
+  match_on: command
+  title: "Eval executing remote download command"
+  expires_at: null
+  revoked: false
+
+- id: "CLT-CMD-018"
+  category: tool
+  severity: high
+  confidence: 0.85
+  action: block
+  pattern: "\\bxargs\\b[^|;]*\\b(curl|wget|bash|sh)\\b"
+  match_on: command
+  title: "xargs dispatching download or shell execution"
+  expires_at: null
+  revoked: false
+
+- id: "CLT-CMD-019"
+  category: tool
+  severity: high
+  confidence: 0.85
+  action: block
+  pattern: "\\bfind\\b[^|;]*-exec\\s+(bash|sh|curl|wget)\\b"
+  match_on: command
+  title: "find -exec executing shell or download commands"
+  expires_at: null
+  revoked: false
+
+# --- DNS exfiltration ---
+- id: "CLT-CMD-020"
+  category: network_egress
+  severity: high
+  confidence: 0.80
+  action: block
+  pattern: "\\b(nslookup|dig|host)\\b[^|;]*\\$\\([^)]+\\)\\.[a-zA-Z]"
+  match_on: command
+  title: "DNS exfiltration via command substitution as subdomain label"
+  expires_at: null
+  revoked: false
+
+- id: "CLT-CMD-021"
+  category: network_egress
+  severity: high
+  confidence: 0.80
+  action: block
+  pattern: "\\b(nslookup|dig|host)\\b[^|;]*`[^`]+`\\.[a-zA-Z]"
+  match_on: command
+  title: "DNS exfiltration via backtick substitution as subdomain label"
+  expires_at: null
+  revoked: false
+
+# --- Loop-based indirect execution ---
+- id: "CLT-CMD-022"
+  category: tool
+  severity: high
+  confidence: 0.80
+  action: block
+  pattern: "\\b(while|for)\\b[^;]*;\\s*do[^;]*\\b(bash|sh|curl|wget)\\b"
+  match_on: command
+  title: "Loop executing shell or download commands"
+  expires_at: null
+  revoked: false

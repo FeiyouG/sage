@@ -1,0 +1,17 @@
+{
+  "name": "sage",
+  "version": "0.4.0",
+  "description": "Safety for Agents - Agent Detection & Response (ADR) for Claude Code",
+  "author": {
+    "name": "Gen Digital"
+  },
+  "license": "Apache-2.0",
+  "repository": "https://github.com/avast/sage",
+  "keywords": [
+    "security",
+    "malware",
+    "protection",
+    "url-reputation"
+  ],
+  "skills": "./skills/"
+}

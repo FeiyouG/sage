@@ -1,0 +1,112 @@
+# Sensitive file path threat patterns for Sage
+# Author: Gen Digital Inc.
+# License: DRL-1.1 (see threats/LICENSE)
+# Detects Write/Edit operations targeting security-sensitive files
+
+# --- System auth files ---
+- id: "CLT-FILE-001"
+  category: secrets
+  severity: critical
+  confidence: 0.95
+  action: block
+  pattern: "(/etc/passwd|/etc/shadow|/etc/sudoers)"
+  match_on: file_path
+  title: "Write to system authentication file"
+  expires_at: null
+  revoked: false
+
+# --- SSH authorized_keys ---
+- id: "CLT-FILE-002"
+  category: secrets
+  severity: critical
+  confidence: 0.95
+  action: block
+  pattern: "\\.ssh/authorized_keys"
+  match_on: file_path
+  title: "Write to SSH authorized_keys (unauthorized access persistence)"
+  expires_at: null
+  revoked: false
+
+# --- SSH private keys and config ---
+- id: "CLT-FILE-003"
+  category: secrets
+  severity: high
+  confidence: 0.90
+  action: require_approval
+  pattern: "\\.ssh/(id_rsa|id_ed25519|id_ecdsa|id_dsa|config)$"
+  match_on: file_path
+  title: "Write to SSH key or config file"
+  expires_at: null
+  revoked: false
+
+# --- Shell RC files ---
+- id: "CLT-FILE-004"
+  category: tool
+  severity: high
+  confidence: 0.85
+  action: require_approval
+  pattern: "\\.(bashrc|zshrc|profile|bash_profile|zprofile|zshenv)$"
+  match_on: file_path
+  title: "Write to shell RC file (persistence mechanism)"
+  expires_at: null
+  revoked: false
+
+# --- macOS LaunchAgents/LaunchDaemons ---
+- id: "CLT-FILE-005"
+  category: tool
+  severity: high
+  confidence: 0.90
+  action: block
+  pattern: "(LaunchAgents|LaunchDaemons)/.*\\.plist$"
+  match_on: file_path
+  title: "Write to macOS LaunchAgent/LaunchDaemon plist"
+  expires_at: null
+  revoked: false
+
+# --- Cron directories ---
+- id: "CLT-FILE-006"
+  category: tool
+  severity: high
+  confidence: 0.85
+  action: require_approval
+  pattern: "(/etc/cron\\.(d|daily|hourly|weekly|monthly)/|/var/spool/cron/)"
+  match_on: file_path
+  title: "Write to cron directory"
+  expires_at: null
+  revoked: false
+
+# --- systemd unit files ---
+- id: "CLT-FILE-007"
+  category: tool
+  severity: high
+  confidence: 0.85
+  action: require_approval
+  pattern: "/etc/systemd/system/"
+  match_on: file_path
+  title: "Write to systemd service unit file"
+  expires_at: null
+  revoked: false
+
+# --- Credential/env files ---
+- id: "CLT-FILE-008"
+  category: secrets
+  severity: high
+  confidence: 0.85
+  action: require_approval
+  pattern: "(\\.env(\\.local|\\.production|\\.staging|\\.development)?|\\.aws/credentials|\\.netrc|\\.pgpass)$"
+  match_on: file_path
+  title: "Write to credential or environment file"
+  expires_at: null
+  revoked: false
+
+# --- Git hooks ---
+- id: "CLT-FILE-009"
+  category: tool
+  severity: high
+  confidence: 0.85
+  action: require_approval
+  pattern: "\\.git/hooks/"
+  match_on: file_path
+  title: "Write to git hook (potential code execution on git events)"
+  expires_at: null
+  revoked: false

@@ -1,0 +1,23 @@
+{
+  "name": "@sage/claude-code",
+  "license": "Apache-2.0",
+  "version": "0.4.0",
+  "type": "module",
+  "scripts": {
+    "build": "node esbuild.config.js",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@sage/core": "workspace:*",
+    "pino": "^9.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

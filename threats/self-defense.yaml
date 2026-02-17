@@ -1,0 +1,55 @@
+# Self-defense patterns — protect Sage and Claude Code configuration
+# Author: Gen Digital Inc.
+# License: DRL-1.1 (see threats/LICENSE)
+# These flag when the AI agent may be manipulated into disabling its own guardrails
+# Using require_approval (not block) to allow legitimate plugin dev and config changes
+
+# Delete .sage directory
+- id: "CLT-SELF-001"
+  category: self_defense
+  severity: critical
+  confidence: 0.90
+  action: require_approval
+  pattern: "(rm|del|rmdir|rd|Remove-Item|unlink)\\s.*\\.sage(\\s|[\\\\/]|$)"
+  case_insensitive: true
+  match_on: command
+  title: "Attempt to delete Sage configuration directory"
+  expires_at: null
+  revoked: false
+
+# Write to Sage config files
+- id: "CLT-SELF-002"
+  category: self_defense
+  severity: high
+  confidence: 0.85
+  action: require_approval
+  pattern: "\\.sage[\\\\/](allowlist|config)\\.json"
+  match_on: file_path
+  title: "Attempt to write to Sage configuration files"
+  expires_at: null
+  revoked: false
+
+# Delete Claude Code hook or plugin config
+- id: "CLT-SELF-003"
+  category: self_defense
+  severity: high
+  confidence: 0.85
+  action: require_approval
+  pattern: "(rm|del|Remove-Item|unlink)\\s.*\\.claude[\\\\/].*(hooks\\.json|installed_plugins)"
+  case_insensitive: true
+  match_on: command
+  title: "Attempt to delete Claude Code hook or plugin configuration"
+  expires_at: null
+  revoked: false
+
+# Disable Sage security features via config
+- id: "CLT-SELF-004"
+  category: self_defense
+  severity: high
+  confidence: 0.85
+  action: require_approval
+  pattern: "heuristics_enabled.*false|url_check.*enabled.*false"
+  match_on: content
+  title: "Attempt to disable Sage security features via config"
+  expires_at: null
+  revoked: false
