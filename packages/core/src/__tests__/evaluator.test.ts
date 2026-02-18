@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { evaluateToolCall } from "../evaluator.js";
-import { extractFromBash } from "../extractors.js";
+import { extractFromBash, extractFromEdit, extractFromWrite } from "../extractors.js";
 import { makeTmpDir } from "./test-utils.js";
 
 const THREATS_DIR = resolve(__dirname, "..", "..", "..", "..", "threats");
@@ -296,5 +296,81 @@ bash /tmp/install.sh`;
 		);
 
 		expect(verdict.decision).toBe("deny");
+	});
+});
+
+describe("evaluateToolCall file artifact allowlist smuggling", () => {
+	it("ATK-01: sensitive file target in Write is not bypassed by allowlisted URL in content", async () => {
+		const dir = await makeTmpDir();
+		const allowlistPath = join(dir, "allowlist.json");
+		const configPath = await writeConfig(dir, allowlistPath);
+		await writeAllowlist(allowlistPath, ["https://google.com/"]);
+
+		const toolInput = {
+			file_path: "/home/user/.ssh/authorized_keys",
+			content: "ssh-ed25519 AAAATESTKEY comment https://google.com",
+		};
+		const artifacts = extractFromWrite(toolInput);
+
+		expect(
+			artifacts.some((artifact) => artifact.type === "file_path" && artifact.value.includes(".ssh")),
+		).toBe(true);
+		expect(
+			artifacts.some((artifact) => artifact.type === "url" && artifact.value === "https://google.com"),
+		).toBe(true);
+
+		const verdict = await evaluateToolCall(
+			{
+				sessionId: "atk01-file-write",
+				toolName: "Write",
+				toolInput,
+				artifacts,
+			},
+			{
+				threatsDir: THREATS_DIR,
+				allowlistsDir: ALLOWLISTS_DIR,
+				configPath,
+			},
+		);
+
+		expect(verdict.decision).toBe("deny");
+		expect(verdict.matchedThreatId).toBe("CLT-FILE-002");
+	});
+
+	it("ATK-01: sensitive file target in Edit is not bypassed by allowlisted URL in new content", async () => {
+		const dir = await makeTmpDir();
+		const allowlistPath = join(dir, "allowlist.json");
+		const configPath = await writeConfig(dir, allowlistPath);
+		await writeAllowlist(allowlistPath, ["https://google.com/"]);
+
+		const toolInput = {
+			file_path: "/home/user/.ssh/authorized_keys",
+			new_string: "ssh-rsa AAAATESTKEY comment https://google.com",
+		};
+		const artifacts = extractFromEdit(toolInput);
+
+		expect(
+			artifacts.some((artifact) => artifact.type === "file_path" && artifact.value.includes(".ssh")),
+		).toBe(true);
+		expect(
+			artifacts.some((artifact) => artifact.type === "url" && artifact.value === "https://google.com"),
+		).toBe(true);
+
+		const verdict = await evaluateToolCall(
+			{
+				sessionId: "atk01-file-edit",
+				toolName: "Edit",
+				toolInput,
+				artifacts,
+			},
+			{
+				threatsDir: THREATS_DIR,
+				allowlistsDir: ALLOWLISTS_DIR,
+				configPath,
+			},
+		);
+
+		expect(verdict.decision).toBe("deny");
+		expect(verdict.matchedThreatId).toBe("CLT-FILE-002");
 	});
 });
