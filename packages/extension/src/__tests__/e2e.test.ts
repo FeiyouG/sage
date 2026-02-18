@@ -217,13 +217,9 @@ function hasFailedOutcomes(summary: HostRunSummary): boolean {
 function buildMissingOutcomeMessage(testCase: E2ECase, summary: HostRunSummary): string {
 	const recorded =
 		summary.orderedOutcomes.length > 0
-			? summary.orderedOutcomes
-					.map((outcome) => `- ${outcome.id} (${outcome.status})`)
-					.join("\n")
+			? summary.orderedOutcomes.map((outcome) => `- ${outcome.id} (${outcome.status})`).join("\n")
 			: "No cases were recorded.";
-	const runErrorSection = summary.runError
-		? `\n\nExtension host error:\n${summary.runError}`
-		: "";
+	const runErrorSection = summary.runError ? `\n\nExtension host error:\n${summary.runError}` : "";
 	return `Missing result for case "${testCase.title}" (${testCase.id}).\n\nRecorded outcomes:\n${recorded}${runErrorSection}`;
 }
 
