@@ -24,8 +24,7 @@
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab",
-		"lineWidth": 100,
-		"lineEnding": "auto"
+		"lineWidth": 100
 	},
 	"javascript": {
 		"formatter": {

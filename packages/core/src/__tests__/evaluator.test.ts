@@ -139,7 +139,9 @@ describe("evaluateToolCall allowlist behavior", () => {
 		const artifacts = extractFromBash(command);
 
 		expect(
-			artifacts.some((artifact) => artifact.type === "url" && artifact.value === "https://google.com"),
+			artifacts.some(
+				(artifact) => artifact.type === "url" && artifact.value === "https://google.com",
+			),
 		).toBe(true);
 		expect(
 			artifacts.some(
@@ -246,10 +248,14 @@ describe("evaluateToolCall file artifact allowlist smuggling", () => {
 		const artifacts = extractFromWrite(toolInput);
 
 		expect(
-			artifacts.some((artifact) => artifact.type === "file_path" && artifact.value.includes(".ssh")),
+			artifacts.some(
+				(artifact) => artifact.type === "file_path" && artifact.value.includes(".ssh"),
+			),
 		).toBe(true);
 		expect(
-			artifacts.some((artifact) => artifact.type === "url" && artifact.value === "https://google.com"),
+			artifacts.some(
+				(artifact) => artifact.type === "url" && artifact.value === "https://google.com",
+			),
 		).toBe(true);
 
 		const verdict = await evaluateToolCall(
@@ -283,10 +289,14 @@ describe("evaluateToolCall file artifact allowlist smuggling", () => {
 		const artifacts = extractFromEdit(toolInput);
 
 		expect(
-			artifacts.some((artifact) => artifact.type === "file_path" && artifact.value.includes(".ssh")),
+			artifacts.some(
+				(artifact) => artifact.type === "file_path" && artifact.value.includes(".ssh"),
+			),
 		).toBe(true);
 		expect(
-			artifacts.some((artifact) => artifact.type === "url" && artifact.value === "https://google.com"),
+			artifacts.some(
+				(artifact) => artifact.type === "url" && artifact.value === "https://google.com",
+			),
 		).toBe(true);
 
 		const verdict = await evaluateToolCall(
