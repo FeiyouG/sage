@@ -198,6 +198,7 @@ export const ConfigSchema = z.object({
 	allowlist: AllowlistConfigSchema.default({}),
 	logging: LoggingConfigSchema.default({}),
 	sensitivity: SensitivitySchema.default("balanced"),
+	disabled_threats: z.array(z.string()).default([]),
 });
 
 export type UrlCheckConfig = z.infer<typeof UrlCheckConfigSchema>;

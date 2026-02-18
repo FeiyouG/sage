@@ -19,6 +19,7 @@ import {
 	type Verdict,
 } from "@sage/core";
 import pino from "pino";
+import { addPendingApproval } from "./approval-tracker.js";
 import { formatBlockReason } from "./format.js";
 
 const logger: Logger = pino({ level: "warn" }, pino.destination(2));
@@ -79,6 +80,7 @@ async function main(): Promise<void> {
 	const toolName = (toolCall.tool_name ?? "") as string;
 	const toolInput = (toolCall.tool_input ?? {}) as Record<string, unknown>;
 	const sessionId = (toolCall.session_id ?? "unknown") as string;
+	const toolUseId = (toolCall.tool_use_id ?? "") as string;
 	const pluginRoot = getPluginRoot();
 
 	// Extract artifacts based on tool type
@@ -119,6 +121,23 @@ async function main(): Promise<void> {
 			logger,
 		},
 	);
+
+	if (verdict.decision === "ask" && toolUseId) {
+		try {
+			await addPendingApproval(
+				toolUseId,
+				{
+					threatId: verdict.matchedThreatId ?? "unknown",
+					threatTitle: verdict.reasons[0] ?? verdict.category,
+					artifact: verdict.artifacts[0] ?? "",
+					artifactType: artifacts[0]?.type ?? "command",
+				},
+				logger,
+			);
+		} catch {
+			// Best-effort — failure doesn't affect the verdict
+		}
+	}
 
 	process.stdout.write(`${JSON.stringify(makeResponse(verdict))}\n`);
 }
