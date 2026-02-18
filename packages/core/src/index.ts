@@ -49,6 +49,7 @@ export { atomicWriteJson, getFileContent } from "./file-utils.js";
 export {
 	formatStartupClean,
 	formatThreatBanner,
+	formatUpdateNotice,
 	kv,
 	separatorLine,
 	severityEmoji,
@@ -144,3 +145,6 @@ export {
 } from "./types.js";
 // URL utilities
 export { hashCommand, normalizeFilePath, normalizeUrl } from "./url-utils.js";
+// Version check
+export type { VersionCheckResult } from "./version-check.js";
+export { checkForUpdate, isNewerVersion } from "./version-check.js";
