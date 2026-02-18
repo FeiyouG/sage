@@ -26,16 +26,19 @@ import {
 } from "@sage/core";
 import pino from "pino";
 import { z } from "zod";
-import { findConsumedApproval, removeConsumedApproval } from "./approval-tracker.js";
+import {
+	findConsumedApprovalAcrossSessions,
+	removeConsumedApprovalAcrossSessions,
+} from "./approval-tracker.js";
 
 const logger: Logger = pino({ level: "warn" }, pino.destination(2));
+
+declare const __SAGE_VERSION__: string;
 
 const server = new McpServer({
 	name: "sage",
 	version: __SAGE_VERSION__,
 });
-
-declare const __SAGE_VERSION__: string;
 
 const ARTIFACT_TYPE = z
 	.enum(["url", "command", "file_path"])
@@ -68,7 +71,7 @@ server.registerTool(
 	},
 	async ({ type, value, reason }) => {
 		try {
-			const consumed = await findConsumedApproval(type, value, logger);
+			const consumed = await findConsumedApprovalAcrossSessions(type, value, logger);
 			if (!consumed) {
 				return {
 					content: [
@@ -94,7 +97,7 @@ server.registerTool(
 			}
 
 			await saveAllowlist(allowlist, config.allowlist, logger);
-			await removeConsumedApproval(type, value, logger);
+			await removeConsumedApprovalAcrossSessions(type, value, logger);
 
 			const label = typeLabel(type);
 			return {

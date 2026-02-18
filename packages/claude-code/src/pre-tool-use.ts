@@ -122,22 +122,26 @@ async function main(): Promise<void> {
 		},
 	);
 
-	const artifactType = artifacts[0]?.type ?? "command";
 	// Only track approvals for allowlistable types (content varies per call, not meaningful to allowlist)
-	if (verdict.decision === "ask" && toolUseId && artifactType !== "content") {
-		try {
-			await addPendingApproval(
-				toolUseId,
-				{
-					threatId: verdict.matchedThreatId ?? "unknown",
-					threatTitle: verdict.reasons[0] ?? verdict.category,
-					artifact: verdict.artifacts[0] ?? "",
-					artifactType,
-				},
-				logger,
-			);
-		} catch {
-			// Best-effort — failure doesn't affect the verdict
+	if (verdict.decision === "ask" && toolUseId) {
+		const matched = artifacts
+			.filter((a) => a.type !== "content" && verdict.artifacts.includes(a.value))
+			.map((a) => ({ value: a.value, type: a.type }));
+		if (matched.length > 0) {
+			try {
+				await addPendingApproval(
+					sessionId,
+					toolUseId,
+					{
+						threatId: verdict.matchedThreatId ?? "unknown",
+						threatTitle: verdict.reasons[0] ?? verdict.category,
+						artifacts: matched,
+					},
+					logger,
+				);
+			} catch {
+				// Best-effort — failure doesn't affect the verdict
+			}
 		}
 	}
 

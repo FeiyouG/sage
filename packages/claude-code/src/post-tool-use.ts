@@ -30,12 +30,13 @@ async function main(): Promise<void> {
 	}
 
 	const toolUseId = (hookInput.tool_use_id ?? "") as string;
+	const sessionId = (hookInput.session_id ?? "unknown") as string;
 	if (!toolUseId) {
 		process.stdout.write("{}\n");
 		return;
 	}
 
-	const entry = await consumePendingApproval(toolUseId, logger);
+	const entry = await consumePendingApproval(sessionId, toolUseId, logger);
 	if (!entry) {
 		// No pending approval for this tool call — most calls hit this path.
 		process.stdout.write("{}\n");
@@ -47,12 +48,21 @@ async function main(): Promise<void> {
 		command: "command",
 		file_path: "file path",
 	};
-	const label = typeLabels[entry.artifactType] ?? entry.artifactType;
+
+	const artifactList = entry.artifacts
+		.map((a) => {
+			const label = typeLabels[a.type] ?? a.type;
+			return `${label} '${a.value}'`;
+		})
+		.join(", ");
+
+	const typeSet = [...new Set(entry.artifacts.map((a) => typeLabels[a.type] ?? a.type))];
+	const typeStr = typeSet.join("/");
 
 	const response = {
 		hookSpecificOutput: {
 			hookEventName: "PostToolUse",
-			additionalContext: `Sage: The user approved a flagged action (threat ${entry.threatId}: ${entry.threatTitle}, artifact: '${entry.artifact}'). To permanently allow this specific ${label} in the future, you can use the sage_allowlist_add MCP tool.`,
+			additionalContext: `Sage: The user approved a flagged action (threat ${entry.threatId}: ${entry.threatTitle}, artifacts: ${artifactList}). To permanently allow ${typeStr === "URL" ? "these URLs" : typeStr === "command" ? "these commands" : `these ${typeStr}s`} in the future, you can use the sage_allowlist_add MCP tool.`,
 		},
 	};
 

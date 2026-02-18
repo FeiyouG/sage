@@ -8571,7 +8571,7 @@ var require_sonic_boom = __commonJS({
       if (!(this instanceof SonicBoom)) {
         return new SonicBoom(opts);
       }
-      let { fd, dest, minLength, maxLength, maxWrite, periodicFlush, sync, append = true, mkdir: mkdir4, retryEAGAIN, fsync, contentMode, mode } = opts || {};
+      let { fd, dest, minLength, maxLength, maxWrite, periodicFlush, sync, append = true, mkdir: mkdir3, retryEAGAIN, fsync, contentMode, mode } = opts || {};
       fd = fd || dest;
       this._len = 0;
       this.fd = -1;
@@ -8596,7 +8596,7 @@ var require_sonic_boom = __commonJS({
       this.append = append || false;
       this.mode = mode;
       this.retryEAGAIN = retryEAGAIN || (() => true);
-      this.mkdir = mkdir4 || false;
+      this.mkdir = mkdir3 || false;
       let fsWriteSync;
       let fsWrite;
       if (contentMode === kContentModeBuffer) {
@@ -11626,18 +11626,27 @@ var require_pino = __commonJS({
 
 // src/pre-tool-use.ts
 var import_node_fs = require("node:fs");
-var import_node_path10 = require("node:path");
+var import_node_path9 = require("node:path");
 
 // ../core/dist/config.js
 var import_node_os = require("node:os");
-var import_node_path = require("node:path");
+var import_node_path2 = require("node:path");
 
 // ../core/dist/file-utils.js
+var import_node_crypto = require("node:crypto");
 var fsPromises = __toESM(require("node:fs/promises"), 1);
+var import_node_path = require("node:path");
 var name1 = "read";
 var name2 = "File";
 function getFileContent(path, encoding = "utf-8") {
   return fsPromises[name1 + name2](path, encoding);
+}
+async function atomicWriteJson(path, data) {
+  await fsPromises.mkdir((0, import_node_path.dirname)(path), { recursive: true });
+  const tmp = `${path}.${(0, import_node_crypto.randomBytes)(6).toString("hex")}.tmp`;
+  await fsPromises.writeFile(tmp, `${JSON.stringify(data, null, 2)}
+`, { mode: 384 });
+  await fsPromises.rename(tmp, path);
 }
 
 // ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/external.js
@@ -15758,10 +15767,10 @@ var ConfigSchema = external_exports.object({
 });
 
 // ../core/dist/config.js
-var DEFAULT_CONFIG_PATH = (0, import_node_path.join)((0, import_node_os.homedir)(), ".sage", "config.json");
+var DEFAULT_CONFIG_PATH = (0, import_node_path2.join)((0, import_node_os.homedir)(), ".sage", "config.json");
 function resolvePath(pathStr) {
   if (pathStr.startsWith("~/") || pathStr === "~") {
-    return (0, import_node_path.join)((0, import_node_os.homedir)(), pathStr.slice(1));
+    return (0, import_node_path2.join)((0, import_node_os.homedir)(), pathStr.slice(1));
   }
   return pathStr;
 }
@@ -15793,9 +15802,9 @@ async function loadConfig(configPath, logger2 = nullLogger) {
 }
 
 // ../core/dist/url-utils.js
-var import_node_crypto = require("node:crypto");
+var import_node_crypto2 = require("node:crypto");
 var import_node_os2 = require("node:os");
-var import_node_path2 = require("node:path");
+var import_node_path3 = require("node:path");
 function normalizeUrl(raw) {
   try {
     const u = new URL(raw);
@@ -15807,11 +15816,11 @@ function normalizeUrl(raw) {
   }
 }
 function hashCommand(command) {
-  return (0, import_node_crypto.createHash)("sha256").update(command).digest("hex");
+  return (0, import_node_crypto2.createHash)("sha256").update(command).digest("hex");
 }
 function normalizeFilePath(raw) {
   const expanded = raw.startsWith("~/") || raw === "~" ? `${(0, import_node_os2.homedir)()}${raw.slice(1)}` : raw;
-  return (0, import_node_path2.normalize)(expanded);
+  return (0, import_node_path3.normalize)(expanded);
 }
 
 // ../core/dist/allowlist.js
@@ -15884,7 +15893,7 @@ function isAllowlisted(allowlist, artifacts) {
 
 // ../core/dist/audit-log.js
 var import_promises = require("node:fs/promises");
-var import_node_path3 = require("node:path");
+var import_node_path4 = require("node:path");
 var MAX_SUMMARY_LEN = 200;
 function toolInputSummary(toolName, toolInput) {
   if (toolName === "Bash") {
@@ -15918,7 +15927,7 @@ async function logVerdict(config, sessionId, toolName, toolInput, verdict, userO
   };
   const path = resolvePath(config.path);
   try {
-    await (0, import_promises.mkdir)((0, import_node_path3.dirname)(path), { recursive: true });
+    await (0, import_promises.mkdir)((0, import_node_path4.dirname)(path), { recursive: true });
     await (0, import_promises.appendFile)(path, `${JSON.stringify(entry)}
 `);
   } catch {
@@ -15926,8 +15935,6 @@ async function logVerdict(config, sessionId, toolName, toolInput, verdict, userO
 }
 
 // ../core/dist/cache.js
-var import_promises2 = require("node:fs/promises");
-var import_node_path4 = require("node:path");
 var ONE_HOUR = 3600;
 var TWENTY_FOUR_HOURS = 86400;
 var FAR_FUTURE = "9999-12-31T23:59:59+00:00";
@@ -16058,12 +16065,7 @@ var VerdictCache = class {
     if (!this.config.enabled)
       return;
     try {
-      await (0, import_promises2.mkdir)((0, import_node_path4.dirname)(this.path), { recursive: true });
-      await (0, import_promises2.writeFile)(this.path, JSON.stringify(this.store, null, 2));
-      try {
-        await (0, import_promises2.chmod)(this.path, 384);
-      } catch {
-      }
+      await atomicWriteJson(this.path, this.store);
     } catch (e) {
       this.logger.warn(`Failed to save cache to ${this.path}`, { error: String(e) });
     }
@@ -16731,13 +16733,13 @@ function extractFromEdit(toolInput) {
 }
 
 // ../core/dist/trusted-domains.js
-var import_promises3 = require("node:fs/promises");
+var import_promises2 = require("node:fs/promises");
 var import_node_path5 = require("node:path");
 var import_yaml = __toESM(require_dist(), 1);
 async function loadTrustedDomains(allowlistsDir, logger2 = nullLogger) {
   let files;
   try {
-    files = (await (0, import_promises3.readdir)(allowlistsDir)).filter((f) => f.endsWith(".yaml")).sort();
+    files = (await (0, import_promises2.readdir)(allowlistsDir)).filter((f) => f.endsWith(".yaml")).sort();
   } catch {
     logger2.debug("Allowlists directory does not exist", { path: allowlistsDir });
     return [];
@@ -17318,7 +17320,7 @@ function extractFromRequirementsTxt(content) {
 }
 
 // ../core/dist/threat-loader.js
-var import_promises4 = require("node:fs/promises");
+var import_promises3 = require("node:fs/promises");
 var import_node_path6 = require("node:path");
 var import_yaml2 = __toESM(require_dist(), 1);
 var REQUIRED_FIELDS = /* @__PURE__ */ new Set([
@@ -17351,7 +17353,7 @@ async function loadThreats(threatDir, logger2 = nullLogger) {
   const threats = [];
   let files;
   try {
-    files = (await (0, import_promises4.readdir)(threatDir)).filter((f) => f.endsWith(".yaml")).sort();
+    files = (await (0, import_promises3.readdir)(threatDir)).filter((f) => f.endsWith(".yaml")).sort();
   } catch {
     logger2.warn("Threat directory does not exist or is unreadable", { path: threatDir });
     return threats;
@@ -17633,11 +17635,17 @@ var MAX_FILE_SIZE = 512 * 1024;
 var import_pino = __toESM(require_pino(), 1);
 
 // src/approval-tracker.ts
-var import_promises5 = require("node:fs/promises");
-var import_node_path9 = require("node:path");
-var PENDING_PATH = "~/.sage/pending-approvals.json";
+var import_promises4 = require("node:fs/promises");
+var SAGE_DIR = "~/.sage";
 var PENDING_STALE_MS = 60 * 60 * 1e3;
 var CONSUMED_TTL_MS = 10 * 60 * 1e3;
+var STALE_FILE_MS = 2 * 60 * 60 * 1e3;
+function sanitizeSessionId(sessionId) {
+  return sessionId.replace(/[^a-zA-Z0-9-]/g, "_");
+}
+function pendingPath(sessionId) {
+  return `${SAGE_DIR}/pending-approvals-${sanitizeSessionId(sessionId)}.json`;
+}
 async function loadJson(path) {
   try {
     const raw = await getFileContent(resolvePath(path));
@@ -17646,11 +17654,16 @@ async function loadJson(path) {
     return null;
   }
 }
-async function saveJson(path, data) {
+async function saveOrDelete(path, data) {
   const resolved = resolvePath(path);
-  await (0, import_promises5.mkdir)((0, import_node_path9.dirname)(resolved), { recursive: true });
-  await (0, import_promises5.writeFile)(resolved, `${JSON.stringify(data, null, 2)}
-`);
+  if (Object.keys(data).length === 0) {
+    try {
+      await (0, import_promises4.unlink)(resolved);
+    } catch {
+    }
+  } else {
+    await atomicWriteJson(resolved, data);
+  }
 }
 function pruneStalePending(store) {
   const now = Date.now();
@@ -17662,12 +17675,12 @@ function pruneStalePending(store) {
   }
   return result;
 }
-async function addPendingApproval(toolUseId, approval, logger2 = nullLogger) {
+async function addPendingApproval(sessionId, toolUseId, approval, logger2 = nullLogger) {
   try {
-    let store = await loadJson(PENDING_PATH) ?? {};
+    let store = await loadJson(pendingPath(sessionId)) ?? {};
     store = pruneStalePending(store);
     store[toolUseId] = { ...approval, createdAt: (/* @__PURE__ */ new Date()).toISOString() };
-    await saveJson(PENDING_PATH, store);
+    await saveOrDelete(pendingPath(sessionId), store);
   } catch (e) {
     logger2.warn("Failed to write pending approval", { error: String(e) });
   }
@@ -17731,7 +17744,7 @@ function makeResponse(verdict) {
   };
 }
 function getPluginRoot() {
-  return (0, import_node_path10.resolve)(__dirname, "..", "..", "..");
+  return (0, import_node_path9.resolve)(__dirname, "..", "..", "..");
 }
 async function main() {
   let rawInput;
@@ -17787,25 +17800,27 @@ async function main() {
   const verdict = await evaluateToolCall(
     { sessionId, toolName, toolInput, artifacts },
     {
-      threatsDir: (0, import_node_path10.join)(pluginRoot, "threats"),
-      allowlistsDir: (0, import_node_path10.join)(pluginRoot, "allowlists"),
+      threatsDir: (0, import_node_path9.join)(pluginRoot, "threats"),
+      allowlistsDir: (0, import_node_path9.join)(pluginRoot, "allowlists"),
       logger
     }
   );
-  const artifactType = artifacts[0]?.type ?? "command";
-  if (verdict.decision === "ask" && toolUseId && artifactType !== "content") {
-    try {
-      await addPendingApproval(
-        toolUseId,
-        {
-          threatId: verdict.matchedThreatId ?? "unknown",
-          threatTitle: verdict.reasons[0] ?? verdict.category,
-          artifact: verdict.artifacts[0] ?? "",
-          artifactType
-        },
-        logger
-      );
-    } catch {
+  if (verdict.decision === "ask" && toolUseId) {
+    const matched = artifacts.filter((a) => a.type !== "content" && verdict.artifacts.includes(a.value)).map((a) => ({ value: a.value, type: a.type }));
+    if (matched.length > 0) {
+      try {
+        await addPendingApproval(
+          sessionId,
+          toolUseId,
+          {
+            threatId: verdict.matchedThreatId ?? "unknown",
+            threatTitle: verdict.reasons[0] ?? verdict.category,
+            artifacts: matched
+          },
+          logger
+        );
+      } catch {
+      }
     }
   }
   process.stdout.write(`${JSON.stringify(makeResponse(verdict))}
