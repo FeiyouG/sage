@@ -16340,10 +16340,18 @@ function kv(key, value) {
 function separatorLine(headerLength) {
   return "\u2501".repeat(headerLength);
 }
-function formatStartupClean(version) {
-  return `\u{1F6E1}\uFE0F Sage v${version} by Gen Digital \u2705 No threats found`;
+function formatUpdateNotice(result) {
+  return `\u2B06\uFE0F  Update available: v${result.currentVersion} \u2192 v${result.latestVersion} (https://github.com/avast/sage)`;
 }
-function formatThreatBanner(version, results) {
+function formatStartupClean(version, versionCheck) {
+  const base = `\u{1F6E1}\uFE0F Sage v${version} by Gen Digital \u2705 No threats found`;
+  if (versionCheck?.updateAvailable) {
+    return `${base}
+${formatUpdateNotice(versionCheck)}`;
+  }
+  return base;
+}
+function formatThreatBanner(version, results, versionCheck) {
   const header = `\u{1F6E1}\uFE0F Sage v${version} by Gen Digital \u2014 Threat Detected`;
   const lines = [" ", header, separatorLine(SEPARATOR_WIDTH)];
   const MAX_FINDINGS = 5;
@@ -16372,6 +16380,10 @@ function formatThreatBanner(version, results) {
       lines.push("");
       lines.push(`   ... and ${overflow} more findings`);
     }
+  }
+  if (versionCheck?.updateAvailable) {
+    lines.push("");
+    lines.push(formatUpdateNotice(versionCheck));
   }
   return lines.join("\n");
 }
@@ -16814,6 +16826,57 @@ async function runSessionStartScan(context) {
   return resultsWithFindings;
 }
 
+// ../core/dist/version-check.js
+var GITHUB_RAW_URL = "https://raw.githubusercontent.com/avast/sage/main/packages/core/package.json";
+var DEFAULT_TIMEOUT_MS = 5e3;
+function isNewerVersion(current, latest) {
+  const parse = (v) => v.replace(/^v/, "").split(".").map((n) => Number.parseInt(n, 10) || 0);
+  const cur = parse(current);
+  const lat = parse(latest);
+  for (let i = 0; i < 3; i++) {
+    const c = cur[i] ?? 0;
+    const l = lat[i] ?? 0;
+    if (l > c)
+      return true;
+    if (l < c)
+      return false;
+  }
+  return false;
+}
+async function checkForUpdate(currentVersion, logger2 = nullLogger, timeoutMs = DEFAULT_TIMEOUT_MS) {
+  if (currentVersion === "dev") {
+    logger2.debug("Skipping version check for dev build");
+    return null;
+  }
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const response = await fetch(GITHUB_RAW_URL, {
+      signal: controller.signal,
+      headers: { Accept: "application/json" }
+    });
+    clearTimeout(timer);
+    if (!response.ok) {
+      logger2.debug(`Version check HTTP ${response.status}`);
+      return null;
+    }
+    const body = await response.json();
+    const latestVersion = body.version;
+    if (typeof latestVersion !== "string") {
+      logger2.debug("Version check: no version field in response");
+      return null;
+    }
+    return {
+      currentVersion,
+      latestVersion,
+      updateAvailable: isNewerVersion(currentVersion, latestVersion)
+    };
+  } catch (err) {
+    logger2.debug(`Version check failed: ${err}`);
+    return null;
+  }
+}
+
 // src/session-start.ts
 var import_pino = __toESM(require_pino(), 1);
 var logger = (0, import_pino.default)({ level: "warn" }, import_pino.default.destination(2));
@@ -16840,20 +16903,23 @@ async function main() {
   const threatsDir = (0, import_node_path7.join)(pluginRoot, "threats");
   const allowlistsDir = (0, import_node_path7.join)(pluginRoot, "allowlists");
   const manifest = getPluginManifest(pluginRoot);
-  const resultsWithFindings = await runSessionStartScan({
-    threatsDir,
-    allowlistsDir,
-    sageVersion: manifest.version,
-    excludePluginPrefixes: manifest.name ? [`${manifest.name}@`] : void 0,
-    logger
-  });
+  const [resultsWithFindings, versionCheck] = await Promise.all([
+    runSessionStartScan({
+      threatsDir,
+      allowlistsDir,
+      sageVersion: manifest.version,
+      excludePluginPrefixes: manifest.name ? [`${manifest.name}@`] : void 0,
+      logger
+    }),
+    checkForUpdate(manifest.version, logger)
+  ]);
   if (resultsWithFindings.length === 0) {
-    const cleanMsg = formatStartupClean(manifest.version);
+    const cleanMsg = formatStartupClean(manifest.version, versionCheck);
     process.stdout.write(`${JSON.stringify({ systemMessage: cleanMsg })}
 `);
     return;
   }
-  const statusMsg = formatThreatBanner(manifest.version, resultsWithFindings);
+  const statusMsg = formatThreatBanner(manifest.version, resultsWithFindings, versionCheck);
   process.stdout.write(`${JSON.stringify({ systemMessage: statusMsg })}
 `);
 }
