@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import type { Logger } from "@sage/core";
 import pino from "pino";
 import { consumePendingApproval } from "./approval-tracker.js";
+import { artifactTypeLabel } from "./format.js";
 
 const logger: Logger = pino({ level: "warn" }, pino.destination(2));
 
@@ -43,20 +44,11 @@ async function main(): Promise<void> {
 		return;
 	}
 
-	const typeLabels: Record<string, string> = {
-		url: "URL",
-		command: "command",
-		file_path: "file path",
-	};
-
 	const artifactList = entry.artifacts
-		.map((a) => {
-			const label = typeLabels[a.type] ?? a.type;
-			return `${label} '${a.value}'`;
-		})
+		.map((a) => `${artifactTypeLabel(a.type)} '${a.value}'`)
 		.join(", ");
 
-	const typeSet = [...new Set(entry.artifacts.map((a) => typeLabels[a.type] ?? a.type))];
+	const typeSet = [...new Set(entry.artifacts.map((a) => artifactTypeLabel(a.type)))];
 	const typeStr = typeSet.join("/");
 
 	const response = {

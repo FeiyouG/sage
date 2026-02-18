@@ -10,6 +10,27 @@ import type { Allowlist, AllowlistConfig, AllowlistEntry, Artifact, Logger } fro
 import { nullLogger } from "./types.js";
 import { hashCommand, normalizeFilePath, normalizeUrl } from "./url-utils.js";
 
+export function emptyAllowlist(): Allowlist {
+	return { urls: {}, commands: {}, filePaths: {} };
+}
+
+function addEntry(
+	record: Record<string, AllowlistEntry>,
+	key: string,
+	reason: string,
+	originalVerdict: string,
+): void {
+	record[key] = { addedAt: new Date().toISOString(), reason, originalVerdict };
+}
+
+function removeEntry(record: Record<string, AllowlistEntry>, key: string): boolean {
+	if (key in record) {
+		delete record[key];
+		return true;
+	}
+	return false;
+}
+
 function parseEntries(raw: Record<string, unknown>): Record<string, AllowlistEntry> {
 	const entries: Record<string, AllowlistEntry> = {};
 	for (const [key, entryData] of Object.entries(raw)) {
@@ -40,7 +61,7 @@ export async function loadAllowlist(
 	try {
 		raw = await getFileContent(path);
 	} catch {
-		return { urls: {}, commands: {}, filePaths: {} };
+		return emptyAllowlist();
 	}
 
 	let data: unknown;
@@ -48,12 +69,12 @@ export async function loadAllowlist(
 		data = JSON.parse(raw);
 	} catch (e) {
 		logger.warn(`Failed to load allowlist from ${path}`, { error: String(e) });
-		return { urls: {}, commands: {}, filePaths: {} };
+		return emptyAllowlist();
 	}
 
 	if (typeof data !== "object" || data === null || Array.isArray(data)) {
 		logger.warn(`Allowlist file ${path} does not contain a JSON object`);
-		return { urls: {}, commands: {}, filePaths: {} };
+		return emptyAllowlist();
 	}
 
 	const record = data as Record<string, unknown>;
@@ -110,13 +131,16 @@ export async function saveAllowlist(
 
 export function isAllowlisted(allowlist: Allowlist, artifacts: Artifact[]): boolean {
 	for (const artifact of artifacts) {
-		if (artifact.type === "url" && normalizeUrl(artifact.value) in allowlist.urls) return true;
+		if (artifact.type === "url" && normalizeUrl(artifact.value) in allowlist.urls) {
+			return true;
+		}
 		if (artifact.type === "command") {
 			const cmdHash = hashCommand(artifact.value);
 			if (cmdHash in allowlist.commands) return true;
 		}
-		if (artifact.type === "file_path" && normalizeFilePath(artifact.value) in allowlist.filePaths)
+		if (artifact.type === "file_path" && normalizeFilePath(artifact.value) in allowlist.filePaths) {
 			return true;
+		}
 	}
 	return false;
 }
@@ -127,11 +151,7 @@ export function addUrl(
 	reason: string,
 	originalVerdict: string,
 ): void {
-	allowlist.urls[normalizeUrl(url)] = {
-		addedAt: new Date().toISOString(),
-		reason,
-		originalVerdict,
-	};
+	addEntry(allowlist.urls, normalizeUrl(url), reason, originalVerdict);
 }
 
 export function addCommand(
@@ -140,12 +160,7 @@ export function addCommand(
 	reason: string,
 	originalVerdict: string,
 ): void {
-	const cmdHash = hashCommand(command);
-	allowlist.commands[cmdHash] = {
-		addedAt: new Date().toISOString(),
-		reason,
-		originalVerdict,
-	};
+	addEntry(allowlist.commands, hashCommand(command), reason, originalVerdict);
 }
 
 export function addFilePath(
@@ -154,35 +169,17 @@ export function addFilePath(
 	reason: string,
 	originalVerdict: string,
 ): void {
-	allowlist.filePaths[normalizeFilePath(filePath)] = {
-		addedAt: new Date().toISOString(),
-		reason,
-		originalVerdict,
-	};
+	addEntry(allowlist.filePaths, normalizeFilePath(filePath), reason, originalVerdict);
 }
 
 export function removeFilePath(allowlist: Allowlist, filePath: string): boolean {
-	const normalized = normalizeFilePath(filePath);
-	if (normalized in allowlist.filePaths) {
-		delete allowlist.filePaths[normalized];
-		return true;
-	}
-	return false;
+	return removeEntry(allowlist.filePaths, normalizeFilePath(filePath));
 }
 
 export function removeUrl(allowlist: Allowlist, url: string): boolean {
-	const normalized = normalizeUrl(url);
-	if (normalized in allowlist.urls) {
-		delete allowlist.urls[normalized];
-		return true;
-	}
-	return false;
+	return removeEntry(allowlist.urls, normalizeUrl(url));
 }
 
 export function removeCommand(allowlist: Allowlist, commandHash: string): boolean {
-	if (commandHash in allowlist.commands) {
-		delete allowlist.commands[commandHash];
-		return true;
-	}
-	return false;
+	return removeEntry(allowlist.commands, commandHash);
 }

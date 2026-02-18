@@ -5,6 +5,7 @@ export {
 	addCommand,
 	addFilePath,
 	addUrl,
+	emptyAllowlist,
 	isAllowlisted,
 	loadAllowlist,
 	removeCommand,

@@ -1,4 +1,5 @@
 import { mkdir, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -30,7 +31,7 @@ vi.mock("@sage/core", async () => {
 
 beforeEach(async () => {
 	tmpDir = join(
-		(await import("node:os")).tmpdir(),
+		tmpdir(),
 		`sage-approval-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
 	);
 	await mkdir(tmpDir, { recursive: true });

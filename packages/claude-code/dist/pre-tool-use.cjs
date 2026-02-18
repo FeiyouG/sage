@@ -15824,6 +15824,9 @@ function normalizeFilePath(raw) {
 }
 
 // ../core/dist/allowlist.js
+function emptyAllowlist() {
+  return { urls: {}, commands: {}, filePaths: {} };
+}
 function parseEntries(raw) {
   const entries = {};
   for (const [key, entryData] of Object.entries(raw)) {
@@ -15846,18 +15849,18 @@ async function loadAllowlist(config, logger2 = nullLogger) {
   try {
     raw = await getFileContent(path);
   } catch {
-    return { urls: {}, commands: {}, filePaths: {} };
+    return emptyAllowlist();
   }
   let data;
   try {
     data = JSON.parse(raw);
   } catch (e) {
     logger2.warn(`Failed to load allowlist from ${path}`, { error: String(e) });
-    return { urls: {}, commands: {}, filePaths: {} };
+    return emptyAllowlist();
   }
   if (typeof data !== "object" || data === null || Array.isArray(data)) {
     logger2.warn(`Allowlist file ${path} does not contain a JSON object`);
-    return { urls: {}, commands: {}, filePaths: {} };
+    return emptyAllowlist();
   }
   const record = data;
   const rawUrls = parseEntries(record.urls ?? {});
@@ -15878,15 +15881,17 @@ async function loadAllowlist(config, logger2 = nullLogger) {
 }
 function isAllowlisted(allowlist, artifacts) {
   for (const artifact of artifacts) {
-    if (artifact.type === "url" && normalizeUrl(artifact.value) in allowlist.urls)
+    if (artifact.type === "url" && normalizeUrl(artifact.value) in allowlist.urls) {
       return true;
+    }
     if (artifact.type === "command") {
       const cmdHash = hashCommand(artifact.value);
       if (cmdHash in allowlist.commands)
         return true;
     }
-    if (artifact.type === "file_path" && normalizeFilePath(artifact.value) in allowlist.filePaths)
+    if (artifact.type === "file_path" && normalizeFilePath(artifact.value) in allowlist.filePaths) {
       return true;
+    }
   }
   return false;
 }

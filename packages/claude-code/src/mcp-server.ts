@@ -30,6 +30,7 @@ import {
 	findConsumedApprovalAcrossSessions,
 	removeConsumedApprovalAcrossSessions,
 } from "./approval-tracker.js";
+import { artifactTypeLabel } from "./format.js";
 
 const logger: Logger = pino({ level: "warn" }, pino.destination(2));
 
@@ -44,16 +45,18 @@ const ARTIFACT_TYPE = z
 	.enum(["url", "command", "file_path"])
 	.describe("Type of artifact: url, command, or file_path");
 
+function textResult(text: string, isError?: boolean) {
+	const result: { content: { type: "text"; text: string }[]; isError?: boolean } = {
+		content: [{ type: "text" as const, text }],
+	};
+	if (isError) result.isError = true;
+	return result;
+}
+
 function displayValue(type: "url" | "command" | "file_path", value: string): string {
 	if (type === "url") return normalizeUrl(value);
 	if (type === "command") return `command hash ${hashCommand(value).slice(0, 12)}...`;
 	return normalizeFilePath(value);
-}
-
-function typeLabel(type: "url" | "command" | "file_path"): string {
-	if (type === "url") return "URL";
-	if (type === "command") return "command";
-	return "file path";
 }
 
 server.registerTool(
@@ -73,15 +76,10 @@ server.registerTool(
 		try {
 			const consumed = await findConsumedApprovalAcrossSessions(type, value, logger);
 			if (!consumed) {
-				return {
-					content: [
-						{
-							type: "text" as const,
-							text: "Cannot add to allowlist: no recent user approval found for this artifact. The user must first encounter and approve this action through Sage's security dialog, then you can permanently allowlist it.",
-						},
-					],
-					isError: true,
-				};
+				return textResult(
+					"Cannot add to allowlist: no recent user approval found for this artifact. The user must first encounter and approve this action through Sage's security dialog, then you can permanently allowlist it.",
+					true,
+				);
 			}
 
 			const config = await loadConfig(undefined, logger);
@@ -99,20 +97,12 @@ server.registerTool(
 			await saveAllowlist(allowlist, config.allowlist, logger);
 			await removeConsumedApprovalAcrossSessions(type, value, logger);
 
-			const label = typeLabel(type);
-			return {
-				content: [
-					{
-						type: "text" as const,
-						text: `Added ${label} to Sage allowlist: ${displayValue(type, value)}. This ${label} will no longer trigger security alerts.`,
-					},
-				],
-			};
+			const label = artifactTypeLabel(type);
+			return textResult(
+				`Added ${label} to Sage allowlist: ${displayValue(type, value)}. This ${label} will no longer trigger security alerts.`,
+			);
 		} catch (e) {
-			return {
-				content: [{ type: "text" as const, text: `Failed to add to allowlist: ${e}` }],
-				isError: true,
-			};
+			return textResult(`Failed to add to allowlist: ${e}`, true);
 		}
 	},
 );
@@ -141,7 +131,7 @@ server.registerTool(
 			if (type === "url") {
 				removed = removeUrl(allowlist, value);
 			} else if (type === "command") {
-				// Try as hash first, then as command text
+				// Try raw value first (may already be a hash), then hash as command text
 				removed = removeCommand(allowlist, value);
 				if (!removed) {
 					removed = removeCommand(allowlist, hashCommand(value));
@@ -150,32 +140,17 @@ server.registerTool(
 				removed = removeFilePath(allowlist, value);
 			}
 
-			const label = typeLabel(type);
+			const label = artifactTypeLabel(type);
 			if (!removed) {
-				return {
-					content: [
-						{
-							type: "text" as const,
-							text: `${label} not found in the allowlist.`,
-						},
-					],
-				};
+				return textResult(`${label} not found in the allowlist.`);
 			}
 
 			await saveAllowlist(allowlist, config.allowlist, logger);
-			return {
-				content: [
-					{
-						type: "text" as const,
-						text: `Removed ${label} from Sage allowlist. Security checks will apply to this ${label} again.`,
-					},
-				],
-			};
+			return textResult(
+				`Removed ${label} from Sage allowlist. Security checks will apply to this ${label} again.`,
+			);
 		} catch (e) {
-			return {
-				content: [{ type: "text" as const, text: `Failed to remove from allowlist: ${e}` }],
-				isError: true,
-			};
+			return textResult(`Failed to remove from allowlist: ${e}`, true);
 		}
 	},
 );

@@ -20,9 +20,9 @@ function createJsonRpcMessage(method: string, params: unknown, id?: number): str
 function sendToMcp(
 	messages: string[],
 ): Promise<{ stdout: string; stderr: string; code: number | null }> {
-	return new Promise((resolve) => {
+	return new Promise((done) => {
 		const child = execFile("node", [MCP_SERVER], { timeout: 10_000 }, (error, stdout, stderr) => {
-			resolve({ stdout, stderr, code: error?.code ? Number(error.code) : child.exitCode });
+			done({ stdout, stderr, code: error?.code ? Number(error.code) : child.exitCode });
 		});
 
 		// SDK uses newline-delimited JSON
