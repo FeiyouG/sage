@@ -2,9 +2,13 @@
 
 ## Installation
 
-Build and install via the OpenClaw CLI:
+Install from npm or build from source:
 
 ```bash
+# From npm (recommended)
+openclaw plugins install @gendigital/sage
+
+# From source
 pnpm install && pnpm build
 cp -r packages/openclaw sage
 openclaw plugins install ./sage
