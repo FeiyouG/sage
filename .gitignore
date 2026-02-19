@@ -4,7 +4,9 @@ dist/
 !packages/claude-code/dist/
 packages/claude-code/dist/*
 !packages/claude-code/dist/pre-tool-use.cjs
+!packages/claude-code/dist/post-tool-use.cjs
 !packages/claude-code/dist/session-start.cjs
+!packages/claude-code/dist/mcp-server.cjs
 packages/extension/resources/
 packages/extension/.vsce/
 *.vsix
