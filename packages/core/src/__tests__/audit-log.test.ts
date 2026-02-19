@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { getRecentEntries, logPluginScan, logVerdict } from "../audit-log.js";
@@ -10,6 +10,8 @@ function makeConfig(dir: string, overrides: Partial<LoggingConfig> = {}): Loggin
 		enabled: true,
 		log_clean: false,
 		path: join(dir, "audit.jsonl"),
+		max_bytes: 5 * 1024 * 1024,
+		max_files: 3,
 		...overrides,
 	};
 }
@@ -119,6 +121,97 @@ describe("logVerdict", () => {
 		const content = await readFile(config.path, "utf-8");
 		const entry = JSON.parse(content.trim());
 		expect(entry.tool_input_summary).toBe("http://evil.com");
+	});
+});
+
+describe("logVerdict rotation", () => {
+	let dir: string;
+
+	beforeEach(async () => {
+		dir = await makeTmpDir();
+	});
+
+	it("does not rotate when file is smaller than max_bytes", async () => {
+		const config = makeConfig(dir, { max_bytes: 50_000, max_files: 3 });
+		await logVerdict(config, "s1", "Bash", { command: "x" }, makeVerdict());
+
+		// No .1 should exist
+		await expect(stat(`${config.path}.1`)).rejects.toThrow();
+		// Active file should have the entry
+		const content = await readFile(config.path, "utf-8");
+		expect(content).toContain("s1");
+	});
+
+	it("rotates when file exceeds max_bytes", async () => {
+		const config = makeConfig(dir, { max_bytes: 50, max_files: 2 });
+		// First write creates the file and exceeds 50 bytes
+		await logVerdict(config, "s1", "Bash", { command: "x".repeat(100) }, makeVerdict());
+		// Second write triggers rotation before appending
+		await logVerdict(config, "s2", "Bash", { command: "y" }, makeVerdict());
+
+		const rotated = await readFile(`${config.path}.1`, "utf-8");
+		expect(rotated).toContain("s1");
+
+		const active = await readFile(config.path, "utf-8");
+		expect(active).toContain("s2");
+		expect(active).not.toContain("s1");
+	});
+
+	it("chains rotations and drops oldest beyond max_files", async () => {
+		const config = makeConfig(dir, { max_bytes: 50, max_files: 2 });
+
+		// Each write exceeds 50 bytes, so every subsequent write triggers rotation
+		await logVerdict(config, "s1", "Bash", { command: "a".repeat(100) }, makeVerdict());
+		await logVerdict(config, "s2", "Bash", { command: "b".repeat(100) }, makeVerdict());
+		await logVerdict(config, "s3", "Bash", { command: "c".repeat(100) }, makeVerdict());
+
+		// .1 = s2 content, .2 = s1 content, active = s3
+		const active = await readFile(config.path, "utf-8");
+		expect(active).toContain("s3");
+
+		const f1 = await readFile(`${config.path}.1`, "utf-8");
+		expect(f1).toContain("s2");
+
+		const f2 = await readFile(`${config.path}.2`, "utf-8");
+		expect(f2).toContain("s1");
+
+		// Now one more write — s1 in .2 should get dropped (max_files=2)
+		await logVerdict(config, "s4", "Bash", { command: "d".repeat(100) }, makeVerdict());
+
+		const activeAfter = await readFile(config.path, "utf-8");
+		expect(activeAfter).toContain("s4");
+
+		const f1After = await readFile(`${config.path}.1`, "utf-8");
+		expect(f1After).toContain("s3");
+
+		const f2After = await readFile(`${config.path}.2`, "utf-8");
+		expect(f2After).toContain("s2");
+
+		// .3 should not exist
+		await expect(stat(`${config.path}.3`)).rejects.toThrow();
+	});
+
+	it("max_bytes: 0 disables rotation", async () => {
+		const config = makeConfig(dir, { max_bytes: 0, max_files: 3 });
+		await logVerdict(config, "s1", "Bash", { command: "x".repeat(200) }, makeVerdict());
+		await logVerdict(config, "s2", "Bash", { command: "y" }, makeVerdict());
+
+		// Both entries in the active file, no rotation
+		const content = await readFile(config.path, "utf-8");
+		expect(content).toContain("s1");
+		expect(content).toContain("s2");
+		await expect(stat(`${config.path}.1`)).rejects.toThrow();
+	});
+
+	it("max_files: 0 disables rotation", async () => {
+		const config = makeConfig(dir, { max_bytes: 50, max_files: 0 });
+		await logVerdict(config, "s1", "Bash", { command: "x".repeat(200) }, makeVerdict());
+		await logVerdict(config, "s2", "Bash", { command: "y" }, makeVerdict());
+
+		const content = await readFile(config.path, "utf-8");
+		expect(content).toContain("s1");
+		expect(content).toContain("s2");
+		await expect(stat(`${config.path}.1`)).rejects.toThrow();
 	});
 });
 

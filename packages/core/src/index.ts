@@ -44,7 +44,8 @@ export {
 	extractFromWrite,
 	extractUrls,
 } from "./extractors.js";
-export { atomicWriteJson, getFileContent } from "./file-utils.js";
+// File utilities
+export { atomicWriteJson, getFileContent, pruneOrphanedTmpFiles } from "./file-utils.js";
 // Format (shared alert formatting)
 export {
 	formatStartupClean,
