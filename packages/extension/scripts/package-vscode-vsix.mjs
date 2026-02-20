@@ -22,6 +22,7 @@ await cp(join(extensionRoot, "resources"), join(stageDir, "resources"), {
 });
 await cp(join(extensionRoot, "README.md"), join(stageDir, "README.md"), { force: true });
 await cp(join(extensionRoot, "LICENSE"), join(stageDir, "LICENSE"), { force: true });
+await cp(join(extensionRoot, "sage-icon.png"), join(stageDir, "sage-icon.png"), { force: true });
 await writeFile(join(stageDir, "package.json"), `${JSON.stringify(vscodeManifest, null, 2)}\n`, "utf8");
 
 await runVscePackage(stageDir, outputVsix);
@@ -29,8 +30,9 @@ await runVscePackage(stageDir, outputVsix);
 function buildVsCodeManifest(base) {
 	const manifest = { ...base };
 	manifest.name = "sage-vscode";
-	manifest.displayName = "Sage for VS Code";
-	manifest.description = "Safety for Agents — ADR layer for VS Code Claude hooks";
+	manifest.displayName = "Gen Sage";
+	manifest.description =
+		"Safety for Agents — protects AI agent tool calls against dangerous commands, malicious URLs, and harmful file writes.";
 	manifest.main = "./dist/vscode_extension.js";
 	manifest.files = [
 		"dist/vscode_extension.js",
@@ -38,6 +40,7 @@ function buildVsCodeManifest(base) {
 		"dist/sage-hook.cjs",
 		"dist/sage-hook.cjs.map",
 		"resources/**",
+		"sage-icon.png",
 		"package.json",
 		"README.md",
 		"LICENSE",

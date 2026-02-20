@@ -1,10 +1,11 @@
 {
   "name": "sage-cursor",
-  "displayName": "Sage for Cursor",
-  "description": "Safety for Agents — ADR layer for Cursor Agent",
+  "displayName": "Gen Sage",
+  "description": "Safety for Agents — protects AI agent tool calls against dangerous commands, malicious URLs, and harmful file writes.",
   "version": "0.4.4",
   "private": true,
   "publisher": "Gen",
+  "icon": "sage-icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/avast/sage.git"
@@ -29,6 +30,7 @@
     "dist/sage-hook.cjs",
     "dist/sage-hook.cjs.map",
     "resources/**",
+    "sage-icon.png",
     "package.json",
     "README.md",
     "LICENSE"
