@@ -34,6 +34,17 @@
   "engines": {
     "node": ">=18"
   },
+  "keywords": [
+    "openclaw",
+    "openclaw-plugin",
+    "security",
+    "adr",
+    "agent-security",
+    "safety",
+    "malware-detection",
+    "skill",
+    "ai-safety"
+  ],
   "publishConfig": {
     "access": "public"
   }
