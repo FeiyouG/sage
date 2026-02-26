@@ -4,7 +4,14 @@
 
 import { extractUrls } from "./extractors.js";
 import { extractDomain, isTrustedDomain } from "./trusted-domains.js";
-import { nullLogger, type Artifact, type HeuristicMatch, type Logger, type Threat, type TrustedDomain } from "./types.js";
+import {
+	type Artifact,
+	type HeuristicMatch,
+	type Logger,
+	nullLogger,
+	type Threat,
+	type TrustedDomain,
+} from "./types.js";
 
 /** Threat IDs where trusted installer domains suppress matches. */
 const TRUSTED_DOMAIN_SUPPRESSIBLE = new Set([
@@ -17,11 +24,9 @@ const TRUSTED_DOMAIN_SUPPRESSIBLE = new Set([
 export class HeuristicsEngine {
 	private readonly threatMap: Map<string, Threat[]> = new Map();
 	private readonly trustedDomains: TrustedDomain[];
-	private readonly logger: Logger;
 
-	constructor(threats: Threat[], trustedDomains?: TrustedDomain[], logger: Logger = nullLogger) {
+	constructor(threats: Threat[], trustedDomains?: TrustedDomain[], _logger: Logger = nullLogger) {
 		this.trustedDomains = trustedDomains ?? [];
-		this.logger = logger;
 
 		for (const threat of threats) {
 			for (const matchType of threat.matchOn) {

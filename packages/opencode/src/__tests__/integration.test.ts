@@ -17,7 +17,12 @@ interface Hooks {
 		input: { tool: string; sessionID: string; callID: string },
 		output: { args: Record<string, unknown> },
 	) => Promise<void>;
-	tool?: Record<string, { execute: (args: any, context: any) => Promise<string> }>;
+	tool?: Record<
+		string,
+		{
+			execute: (args: Record<string, unknown>, context: Record<string, unknown>) => Promise<string>;
+		}
+	>;
 }
 
 describe("OpenCode integration: Sage plugin pipeline", { timeout: 30_000 }, () => {
@@ -427,7 +432,7 @@ describe("OpenCode integration: Plugin scanning", { timeout: 30_000 }, () => {
 
 		// Banner should always be defined (either threats or clean message)
 		expect(findingsBanner).toBeDefined();
-		if (findingsBanner && findingsBanner.includes("⚠️")) {
+		if (findingsBanner?.includes("⚠️")) {
 			// Threats detected - verify banner format
 			expect(findingsBanner).toContain("suspect.js");
 			expect(findingsBanner).toMatch(/\d+ finding\(s\)/);

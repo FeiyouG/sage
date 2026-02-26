@@ -62,18 +62,23 @@ The `build` script copies threat definitions and allowlists into `resources/` au
 
 ## OpenCode
 
-Install the plugin package and add it to your OpenCode config:
+Install from a local source checkout and link the plugin path in OpenCode config:
+
+```bash
+git clone https://github.com/avast/sage
+cd sage
+pnpm install
+pnpm --filter @sage/opencode run build
+```
+
+Global config (`~/.config/opencode/opencode.json`):
 
 ```json
 {
-  "plugin": ["@sage/opencode"]
+  "plugin": ["/absolute/path/to/sage/packages/opencode"]
 }
 ```
 
-Set this in either:
-
-- `~/.config/opencode/opencode.json` for global use
-- `.opencode/opencode.json` for project-only use
 
 See [Platform Guide: OpenCode](platform-guides/opencode.md) for tool mapping and verdict behavior.
 

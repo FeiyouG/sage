@@ -55,7 +55,7 @@ export const SagePlugin: Plugin = async ({ client, directory }) => {
 
 			if (!pendingFindings) return; // No findings or already injected
 
-			output.text = [output.text, pendingFindings].join('\n\n');
+			output.text = [output.text, pendingFindings].join("\n\n");
 
 			pendingFindings = null;
 			logger.info("Sage: injected plugin scan findings", { sessionID });

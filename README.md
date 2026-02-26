@@ -45,11 +45,18 @@ cp -r packages/openclaw sage && openclaw plugins install ./sage
 
 ### OpenCode
 
-Add the plugin in your OpenCode config (`~/.config/opencode/opencode.json` or `.opencode/opencode.json`):
+Use a local source checkout and add the plugin path in OpenCode config:
+
+```bash
+git clone https://github.com/avast/sage
+cd sage
+pnpm install
+pnpm --filter @sage/opencode run build
+```
 
 ```json
 {
-  "plugin": ["@sage/opencode"]
+  "plugin": ["/absolute/path/to/sage/packages/opencode"]
 }
 ```
 

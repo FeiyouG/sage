@@ -16869,10 +16869,8 @@ var TRUSTED_DOMAIN_SUPPRESSIBLE = /* @__PURE__ */ new Set([
 var HeuristicsEngine = class {
   threatMap = /* @__PURE__ */ new Map();
   trustedDomains;
-  logger;
-  constructor(threats, trustedDomains, logger2 = nullLogger) {
+  constructor(threats, trustedDomains, _logger = nullLogger) {
     this.trustedDomains = trustedDomains ?? [];
-    this.logger = logger2;
     for (const threat of threats) {
       for (const matchType of threat.matchOn) {
         const artifactType = matchType === "domain" ? "url" : matchType;

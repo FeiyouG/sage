@@ -12,15 +12,22 @@ Unmapped tools pass through unchanged.
 
 ## Install
 
-Add the package in OpenCode config:
+Clone the repo, build the OpenCode package, then point OpenCode to this package path:
+
+```bash
+git clone https://github.com/avast/sage
+cd sage
+pnpm install
+pnpm --filter @sage/opencode run build
+```
+
+Global config (`~/.config/opencode/opencode.json`):
 
 ```json
 {
-  "plugin": ["@sage/opencode"]
+  "plugin": ["/absolute/path/to/sage/packages/opencode"]
 }
 ```
-
-For local development, point OpenCode to this package path.
 
 ## Behavior
 
@@ -89,7 +96,7 @@ Scan cache stored at `~/.sage/plugin_scan_cache.json` for performance.
 ## Build
 
 ```bash
-pnpm -C packages/opencode build
+pnpm --filter @sage/opencode run build
 ```
 
 This copies `threats/` and `allowlists/` into `packages/opencode/resources/`.

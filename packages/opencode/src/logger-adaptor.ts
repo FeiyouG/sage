@@ -17,7 +17,7 @@ export class OpencodeLogger implements Logger {
 	}
 
 	public async info(msg: string, data?: Record<string, unknown>) {
-		await this.write("info", msg, data).catch(()=> {});
+		await this.write("info", msg, data).catch(() => {});
 	}
 
 	public async warn(msg: string, data?: Record<string, unknown>) {

