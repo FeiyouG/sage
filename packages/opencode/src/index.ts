@@ -50,6 +50,17 @@ export const SagePlugin: Plugin = async ({ client, directory }) => {
 		"tool.execute.before": toolHanlders["tool.execute.before"],
 		"tool.execute.after": toolHanlders["tool.execute.after"],
 
+		"experimental.text.complete": async (input, output) => {
+			const sessionID = input.sessionID;
+
+			if (!pendingFindings) return; // No findings or already injected
+
+			output.text = [output.text, pendingFindings].join('\n\n');
+
+			pendingFindings = null;
+			logger.info("Sage: injected plugin scan findings", { sessionID });
+		},
+
 		// Event hook for session.created
 		event: async ({ event }) => {
 			// Only scan on session.created (not session.updated)
@@ -58,16 +69,11 @@ export const SagePlugin: Plugin = async ({ client, directory }) => {
 				const sessionID = (event as any).sessionID ?? (event as any).id ?? "unknown";
 
 				try {
-					logger.info("Sage: starting session scan", { sessionID });
+					logger.debug("Sage: starting session scan", { sessionID });
 
 					// Run scan with callback to capture findings
-					await createSessionScanHandler(logger, directory, (findingsBanner) => {
-						pendingFindings = findingsBanner;
-						if (findingsBanner) {
-							logger.info("Sage: scan found threats", { sessionID });
-						} else {
-							logger.info("Sage: scan clean", { sessionID });
-						}
+					await createSessionScanHandler(logger, directory, (findings) => {
+						pendingFindings = findings;
 					})();
 				} catch (error) {
 					logger.error("Sage session scan failed (fail-open)", {
@@ -76,21 +82,6 @@ export const SagePlugin: Plugin = async ({ client, directory }) => {
 					});
 				}
 			}
-		},
-
-		// System prompt injection hook (one-shot)
-		"experimental.chat.system.transform": async (input, output) => {
-			const sessionID = input.sessionID;
-			if (!sessionID) return;
-
-			if (!pendingFindings) return; // No findings or already injected
-
-			// Inject findings at start of system prompt
-			output.system.unshift(pendingFindings);
-
-			// Delete to ensure one-shot delivery
-			pendingFindings = null;
-			logger.info("Sage: injected plugin scan findings", { sessionID });
 		},
 
 		tool: {

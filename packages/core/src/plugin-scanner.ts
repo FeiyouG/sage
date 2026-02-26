@@ -87,41 +87,43 @@ export async function discoverPlugins(
 async function walkPluginFiles(installPath: string, logger: Logger): Promise<string[]> {
 	const files: string[] = [];
 
-	async function walk(dir: string): Promise<void> {
-		let entries: string[];
+	async function walk(dirOrFile: string): Promise<void> {
+		let stats: Awaited<ReturnType<typeof stat>>;
 		try {
-			entries = await readdir(dir);
+			stats = await stat(dirOrFile);
 		} catch {
 			return;
 		}
-
-		for (const entry of entries) {
-			if (SKIP_DIRS.has(entry)) continue;
-			const fullPath = join(dir, entry);
-
-			let stats: Awaited<ReturnType<typeof stat>>;
-			try {
-				stats = await stat(fullPath);
-			} catch {
-				continue;
+		// Handle file: check if scannable and add to results
+		if (stats.isFile()) {
+			if (
+				SCANNABLE_EXTENSIONS.has(extname(dirOrFile).toLowerCase()) &&
+				stats.size <= MAX_FILE_SIZE
+			) {
+				files.push(dirOrFile);
 			}
-
-			if (stats.isDirectory()) {
+			return;
+		}
+		// Handle directory: recursively walk entries
+		if (stats.isDirectory()) {
+			let entries: string[];
+			try {
+				entries = await readdir(dirOrFile);
+			} catch {
+				return;
+			}
+			for (const entry of entries) {
+				if (SKIP_DIRS.has(entry)) continue;
+				const fullPath = join(dirOrFile, entry);
 				await walk(fullPath);
-			} else if (stats.isFile()) {
-				if (!SCANNABLE_EXTENSIONS.has(extname(fullPath).toLowerCase())) continue;
-				if (stats.size > MAX_FILE_SIZE) continue;
-				files.push(fullPath);
 			}
 		}
 	}
-
 	try {
 		await walk(installPath);
 	} catch (e) {
-		logger.warn(`Error walking plugin directory ${installPath}`, { error: String(e) });
+		logger.warn(`Error walking plugin path ${installPath}`, { error: String(e) });
 	}
-
 	return files;
 }
 
@@ -187,7 +189,7 @@ export async function scanPlugin(
 
 	// Only run command-type heuristics on plugin files
 	const commandThreats = threats.filter((t) => t.matchOn.has("command"));
-	const heuristics = new HeuristicsEngine(commandThreats, trustedDomains);
+	const heuristics = new HeuristicsEngine(commandThreats, trustedDomains, logger);
 
 	const allUrls: string[] = [];
 	const hashToFiles = new Map<string, string[]>();
@@ -240,59 +242,59 @@ export async function scanPlugin(
 	const urlCheckPromise =
 		checkUrls && allUrls.length > 0
 			? (async () => {
-					try {
-						const uniqueUrls = [...new Set(allUrls)];
-						const client = new UrlCheckClient();
-						const checkResults = await client.checkUrls(uniqueUrls);
-						for (const ur of checkResults) {
-							if (ur.isMalicious) {
-								const findingDetails = ur.findings
-									.map((f) => `${f.severityName}/${f.typeName}`)
-									.join(", ");
-								result.findings.push({
-									threatId: "URL_CHECK",
-									title: `Malicious URL (${findingDetails})`,
-									severity: "critical",
-									confidence: 1.0,
-									action: "block",
-									artifact: ur.url.slice(0, 200),
-									sourceFile: "URL check",
-								});
-							}
+				try {
+					const uniqueUrls = [...new Set(allUrls)];
+					const client = new UrlCheckClient();
+					const checkResults = await client.checkUrls(uniqueUrls);
+					for (const ur of checkResults) {
+						if (ur.isMalicious) {
+							const findingDetails = ur.findings
+								.map((f) => `${f.severityName}/${f.typeName}`)
+								.join(", ");
+							result.findings.push({
+								threatId: "URL_CHECK",
+								title: `Malicious URL (${findingDetails})`,
+								severity: "critical",
+								confidence: 1.0,
+								action: "block",
+								artifact: ur.url.slice(0, 200),
+								sourceFile: "URL check",
+							});
 						}
-					} catch {
-						// Fail open
 					}
-				})()
+				} catch {
+					// Fail open
+				}
+			})()
 			: Promise.resolve();
 
 	const fileCheckPromise =
 		checkFileHashes && hashToFiles.size > 0
 			? (async () => {
-					try {
-						const client = new FileCheckClient();
-						const uniqueHashes = [...hashToFiles.keys()];
-						const checkResults = await client.checkHashes(uniqueHashes);
-						for (const fr of checkResults) {
-							if (fr.severity === "SEVERITY_MALWARE") {
-								const filePaths = hashToFiles.get(fr.sha256) ?? [];
-								for (const filePath of filePaths) {
-									result.findings.push({
-										threatId: "FILE_CHECK",
-										title: `Malicious file (${fr.detectionNames.join(", ") || "unknown"})`,
-										severity: "critical",
-										confidence: 1.0,
-										action: "block",
-										artifact: fr.sha256,
-										sourceFile: relative(plugin.installPath, filePath),
-									});
-								}
+				try {
+					const client = new FileCheckClient();
+					const uniqueHashes = [...hashToFiles.keys()];
+					const checkResults = await client.checkHashes(uniqueHashes);
+					for (const fr of checkResults) {
+						if (fr.severity === "SEVERITY_MALWARE") {
+							const filePaths = hashToFiles.get(fr.sha256) ?? [];
+							for (const filePath of filePaths) {
+								result.findings.push({
+									threatId: "FILE_CHECK",
+									title: `Malicious file (${fr.detectionNames.join(", ") || "unknown"})`,
+									severity: "critical",
+									confidence: 1.0,
+									action: "block",
+									artifact: fr.sha256,
+									sourceFile: relative(plugin.installPath, filePath),
+								});
 							}
 						}
-					} catch {
-						// Fail open
 					}
-				})()
+				} catch {
+					// Fail open
+				}
+			})()
 			: Promise.resolve();
 
 	await Promise.all([urlCheckPromise, fileCheckPromise]);

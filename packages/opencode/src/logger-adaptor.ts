@@ -13,19 +13,19 @@ export class OpencodeLogger implements Logger {
 	}
 
 	public async debug(msg: string, data?: Record<string, unknown>) {
-		await this.write("debug", msg, data);
+		await this.write("debug", msg, data).catch(() => {});
 	}
 
 	public async info(msg: string, data?: Record<string, unknown>) {
-		await this.write("info", msg, data);
+		await this.write("info", msg, data).catch(()=> {});
 	}
 
 	public async warn(msg: string, data?: Record<string, unknown>) {
-		await this.write("warn", msg, data);
+		await this.write("warn", msg, data).catch(() => {});
 	}
 
 	public async error(msg: string, data?: Record<string, unknown>) {
-		await this.write("error", msg, data);
+		await this.write("error", msg, data).catch(() => {});
 	}
 
 	private async write(level: "debug" | "info" | "warn" | "error", msg: string, data?: unknown) {

@@ -6,8 +6,8 @@
 import {
 	checkForUpdate,
 	computeConfigHash,
+	formatStartupClean,
 	formatThreatBanner,
-	formatUpdateNotice,
 	fromCachedFinding,
 	getCached,
 	type Logger,
@@ -51,11 +51,11 @@ async function runScan(
 		checkForUpdate(version, logger),
 	]);
 
-	const updateNotice = versionCheck?.updateAvailable ? formatUpdateNotice(versionCheck) : null;
+	let banner = formatStartupClean(version, versionCheck);
 
 	if (threats.length === 0) {
 		logger.warn(`Sage plugin scan (${context}): no threats loaded, skipping`);
-		return updateNotice;
+		return banner;
 	}
 	logger.info(`Sage plugin scan (${context}): loaded ${threats.length} threat definitions`);
 
@@ -66,7 +66,7 @@ async function runScan(
 
 	if (plugins.length === 0) {
 		logger.warn(`Sage plugin scan (${context}): no plugins to scan after filtering`);
-		return updateNotice;
+		return banner;
 	}
 	logger.info(`Sage plugin scan (${context}): ${plugins.length} plugin(s) to scan`, {
 		keys: plugins.map((p) => p.key),
@@ -139,14 +139,13 @@ async function runScan(
 	}
 
 	if (resultsWithFindings.length > 0) {
-		const banner = formatThreatBanner(version, resultsWithFindings, versionCheck);
+		banner = formatThreatBanner(version, resultsWithFindings, versionCheck);
 		logger.warn(`Sage: threat findings detected`, {
 			plugins: resultsWithFindings.map((r) => r.plugin.key),
 		});
-		return banner;
 	}
 
-	return updateNotice;
+	return banner;
 }
 
 function createScanHandler(
