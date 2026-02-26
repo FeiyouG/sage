@@ -6,7 +6,7 @@
   <img src="images/sage-logo-shaded.png" alt="Sage" width="50%">
 </p>
 
-Sage intercepts tool calls (Bash commands, URL fetches, file writes) via hook systems in [Claude Code](docs/platform-guides/claude-code.md), [Cursor / VS Code](docs/platform-guides/cursor.md), and [OpenClaw](docs/platform-guides/openclaw.md), and checks them against:
+Sage intercepts tool calls (Bash commands, URL fetches, file writes) via hook systems in [Claude Code](docs/platform-guides/claude-code.md), [Cursor / VS Code](docs/platform-guides/cursor.md), [OpenClaw](docs/platform-guides/openclaw.md), and [OpenCode](docs/platform-guides/opencode.md), and checks them against:
 
 - **URL reputation** - cloud-based malware, phishing, and scam detection
 - **Local heuristics** - YAML-based threat definitions for dangerous patterns
@@ -43,6 +43,16 @@ pnpm install && pnpm build
 cp -r packages/openclaw sage && openclaw plugins install ./sage
 ```
 
+### OpenCode
+
+Add the plugin in your OpenCode config (`~/.config/opencode/opencode.json` or `.opencode/opencode.json`):
+
+```json
+{
+  "plugin": ["@sage/opencode"]
+}
+```
+
 See [Getting Started](docs/getting-started.md) for detailed instructions.
 
 ## Documentation
@@ -60,7 +70,7 @@ See [Getting Started](docs/getting-started.md) for detailed instructions.
 | [FAQ](docs/faq.md)                               | Common questions                               |
 | [Privacy](docs/privacy.md)                       | What data is sent, what stays local            |
 
-**Platform guides:** [Claude Code](docs/platform-guides/claude-code.md) · [Cursor / VS Code](docs/platform-guides/cursor.md) · [OpenClaw](docs/platform-guides/openclaw.md)
+**Platform guides:** [Claude Code](docs/platform-guides/claude-code.md) · [Cursor / VS Code](docs/platform-guides/cursor.md) · [OpenClaw](docs/platform-guides/openclaw.md) · [OpenCode](docs/platform-guides/opencode.md)
 
 ## Current Limitations
 

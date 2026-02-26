@@ -1,6 +1,6 @@
 # Getting Started
 
-Sage supports three platforms: Claude Code, Cursor/VS Code, and OpenClaw. Pick the one you use.
+Sage supports four platforms: Claude Code, Cursor/VS Code, OpenClaw, and OpenCode. Pick the one you use.
 
 ## Prerequisites
 
@@ -59,6 +59,23 @@ openclaw plugins install ./sage
 The `build` script copies threat definitions and allowlists into `resources/` automatically.
 
 > **Note:** OpenClaw's `plugins.code_safety` audit will flag Sage with a `potential-exfiltration` warning. This is a false positive - Sage reads local files (config, cache, YAML threats) and separately sends URL hashes to a reputation API. No file content is sent over the network.
+
+## OpenCode
+
+Install the plugin package and add it to your OpenCode config:
+
+```json
+{
+  "plugin": ["@sage/opencode"]
+}
+```
+
+Set this in either:
+
+- `~/.config/opencode/opencode.json` for global use
+- `.opencode/opencode.json` for project-only use
+
+See [Platform Guide: OpenCode](platform-guides/opencode.md) for tool mapping and verdict behavior.
 
 ## Verify It Works
 
