@@ -110,7 +110,7 @@ export const SagePlugin: Plugin = async ({ client, directory }) => {
 		},
 
 		tool: {
-			// TODO: After the following PR merged to support client V2 in Opencode Plugin, 
+			// TODO: After the following PR merged to support client V2 in Opencode Plugin,
 			// use QuestionTools.ask to replace sage_approve tool
 			// PR: https://github.com/anomalyco/opencode/pull/12046
 			// Discussion: https://github.com/avast/sage/pull/21#discussion_r2873812399

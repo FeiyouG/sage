@@ -41,19 +41,15 @@ function runOpenCode(
 	args: string[],
 	options: { cwd?: string; env?: NodeJS.ProcessEnv; timeout?: number } = {},
 ) {
-	return spawnSync(
-		OPENCODE_BIN,
-		[...args, "--format", "json", "--agent", "build"],
-		{
-			encoding: "utf8",
-			timeout: options.timeout ?? 90_000,
-			killSignal: "SIGKILL",
-			windowsHide: true,
-			stdio: ["ignore", "pipe", "pipe"], // Critical: ignore stdin to prevent hanging
-			cwd: options.cwd,
-			env: options.env,
-		},
-	);
+	return spawnSync(OPENCODE_BIN, [...args, "--format", "json", "--agent", "build"], {
+		encoding: "utf8",
+		timeout: options.timeout ?? 90_000,
+		killSignal: "SIGKILL",
+		windowsHide: true,
+		stdio: ["ignore", "pipe", "pipe"], // Critical: ignore stdin to prevent hanging
+		cwd: options.cwd,
+		env: options.env,
+	});
 }
 
 function runPrompt(
