@@ -7,7 +7,8 @@ import {
 } from "@sage/core";
 import { ApprovalStore } from "./approval-store.js";
 import { extractFromOpenCodeTool } from "./extractors.js";
-import { artifactTypeLabel, formatAskMessage, formatDenyMessage } from "./format.js";
+import { artifactTypeLabel } from "./format.js";
+import { SageVerdictAskError, SageVerdictBlockError as SageVerdictDenyError, SageVerdictError } from "./error.js";
 
 export const createToolHandlers = (
 	logger: Logger,
@@ -60,7 +61,7 @@ export const createToolHandlers = (
 			}
 
 			if (verdict.decision === "deny") {
-				throw new Error(formatDenyMessage(verdict));
+				throw new SageVerdictDenyError(verdict);
 			}
 
 			approvalStore.setPending(actionId, {
@@ -70,9 +71,9 @@ export const createToolHandlers = (
 				createdAt: Date.now(),
 			});
 
-			throw new Error(formatAskMessage(actionId, verdict, artifacts));
+			throw new SageVerdictAskError(actionId, verdict, artifacts);
 		} catch (error) {
-			if (error instanceof Error && error.message.startsWith("Sage")) {
+			if (error instanceof SageVerdictError) {
 				throw error;
 			}
 			logger.error("Sage opencode hook failed open", { error: String(error), tool: input.tool });

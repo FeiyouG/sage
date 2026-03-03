@@ -28,6 +28,8 @@ interface Hooks {
 describe("OpenCode integration: Sage plugin pipeline", { timeout: 30_000 }, () => {
 	let tmpHome: string;
 	let prevHome: string | undefined;
+	let prevXdgConfigHome: string | undefined;
+	let prevXdgCacheHome: string | undefined;
 	let hooks: Hooks;
 	let allowlistPath: string;
 
@@ -55,8 +57,12 @@ describe("OpenCode integration: Sage plugin pipeline", { timeout: 30_000 }, () =
 
 	beforeAll(async () => {
 		prevHome = process.env.HOME;
+		prevXdgConfigHome = process.env.XDG_CONFIG_HOME;
+		prevXdgCacheHome = process.env.XDG_CACHE_HOME;
 		tmpHome = await mkdtemp(resolve(tmpdir(), "sage-opencode-test-"));
 		process.env.HOME = tmpHome;
+		process.env.XDG_CONFIG_HOME = resolve(tmpHome, ".config");
+		process.env.XDG_CACHE_HOME = resolve(tmpHome, ".cache");
 
 		const sageDir = resolve(tmpHome, ".sage");
 		allowlistPath = resolve(sageDir, "allowlist.json");
@@ -96,6 +102,16 @@ describe("OpenCode integration: Sage plugin pipeline", { timeout: 30_000 }, () =
 	afterAll(async () => {
 		if (prevHome !== undefined) {
 			process.env.HOME = prevHome;
+		}
+		if (prevXdgConfigHome !== undefined) {
+			process.env.XDG_CONFIG_HOME = prevXdgConfigHome;
+		} else {
+			delete process.env.XDG_CONFIG_HOME;
+		}
+		if (prevXdgCacheHome !== undefined) {
+			process.env.XDG_CACHE_HOME = prevXdgCacheHome;
+		} else {
+			delete process.env.XDG_CACHE_HOME;
 		}
 		await rm(tmpHome, { recursive: true, force: true });
 	});
@@ -200,12 +216,18 @@ describe("OpenCode integration: Sage plugin pipeline", { timeout: 30_000 }, () =
 describe("OpenCode integration: Plugin scanning", { timeout: 30_000 }, () => {
 	let tmpHome: string;
 	let prevHome: string | undefined;
+	let prevXdgConfigHome: string | undefined;
+	let prevXdgCacheHome: string | undefined;
 	let _hooks: Hooks;
 
 	beforeAll(async () => {
 		prevHome = process.env.HOME;
+		prevXdgConfigHome = process.env.XDG_CONFIG_HOME;
+		prevXdgCacheHome = process.env.XDG_CACHE_HOME;
 		tmpHome = await mkdtemp(resolve(tmpdir(), "sage-opencode-scan-test-"));
 		process.env.HOME = tmpHome;
+		process.env.XDG_CONFIG_HOME = resolve(tmpHome, ".config");
+		process.env.XDG_CACHE_HOME = resolve(tmpHome, ".cache");
 
 		const sageDir = resolve(tmpHome, ".sage");
 		await mkdir(sageDir, { recursive: true });
@@ -236,6 +258,16 @@ describe("OpenCode integration: Plugin scanning", { timeout: 30_000 }, () => {
 	afterAll(async () => {
 		if (prevHome !== undefined) {
 			process.env.HOME = prevHome;
+		}
+		if (prevXdgConfigHome !== undefined) {
+			process.env.XDG_CONFIG_HOME = prevXdgConfigHome;
+		} else {
+			delete process.env.XDG_CONFIG_HOME;
+		}
+		if (prevXdgCacheHome !== undefined) {
+			process.env.XDG_CACHE_HOME = prevXdgCacheHome;
+		} else {
+			delete process.env.XDG_CACHE_HOME;
 		}
 		await rm(tmpHome, { recursive: true, force: true });
 	});

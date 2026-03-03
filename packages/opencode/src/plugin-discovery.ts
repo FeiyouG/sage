@@ -9,10 +9,16 @@ import { basename, join } from "node:path";
 import type { Logger, PluginInfo } from "@sage/core";
 import { getFileContent } from "@sage/core";
 
-const GLOBAL_CONFIG_PATH = join(homedir(), ".config", "opencode", "opencode.json");
+/** Resolve XDG base directories with fallbacks to homedir defaults */
+function getConfigHome(): string {
+	return process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config");
+}
+
+function getCacheHome(): string {
+	return process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache");
+}
+
 const PROJECT_CONFIG_NAME = "opencode.json";
-const GLOBAL_PLUGINS_DIR = join(homedir(), ".config", "opencode", "plugins");
-const NPM_CACHE_DIR = join(homedir(), ".cache", "opencode", "node_modules");
 
 /**
  * Discover OpenCode plugins from all sources:
@@ -32,7 +38,8 @@ export async function discoverOpenCodePlugins(
 	plugins.push(...npmPlugins);
 
 	// 2. Discover local plugin files (global)
-	const globalPlugins = await discoverLocalPlugins(GLOBAL_PLUGINS_DIR, "global", logger);
+	const globalPluginsDir = join(getConfigHome(), "opencode", "plugins");
+	const globalPlugins = await discoverLocalPlugins(globalPluginsDir, "global", logger);
 	plugins.push(...globalPlugins);
 
 	// 3. Discover local plugin files (project)
@@ -55,7 +62,8 @@ async function discoverNpmPlugins(logger: Logger, projectDir?: string): Promise<
 
 	// Read global config
 	try {
-		const globalConfig = JSON.parse(await getFileContent(GLOBAL_CONFIG_PATH)) as Record<
+		const globalConfigPath = join(getConfigHome(), "opencode", "opencode.json");
+		const globalConfig = JSON.parse(await getFileContent(globalConfigPath)) as Record<
 			string,
 			unknown
 		>;
@@ -85,9 +93,10 @@ async function discoverNpmPlugins(logger: Logger, projectDir?: string): Promise<
 	}
 
 	// For each plugin name, find it in node_modules
+	const npmCacheDir = join(getCacheHome(), "opencode", "node_modules");
 	for (const pluginName of pluginNames) {
 		try {
-			const installPath = join(NPM_CACHE_DIR, pluginName);
+			const installPath = join(npmCacheDir, pluginName);
 			const pkgJsonPath = join(installPath, "package.json");
 			const pkgJson = JSON.parse(await getFileContent(pkgJsonPath)) as Record<string, unknown>;
 

@@ -74,7 +74,7 @@ export const SagePlugin: Plugin = async ({ client, directory }) => {
 					pendingFindings,
 					"",
 					"Inform the user about these security findings.",
-					`<system-reminder>`,
+					`</system-reminder>`,
 				].join("\n"),
 				synthetic: true, // Mark as synthetic/injected
 			};
@@ -110,6 +110,10 @@ export const SagePlugin: Plugin = async ({ client, directory }) => {
 		},
 
 		tool: {
+			// TODO: After the following PR merged to support client V2 in Opencode Plugin, 
+			// use QuestionTools.ask to replace sage_approve tool
+			// PR: https://github.com/anomalyco/opencode/pull/12046
+			// Discussion: https://github.com/avast/sage/pull/21#discussion_r2873812399
 			sage_approve: tool({
 				description:
 					"Approve or reject a Sage-flagged tool call. IMPORTANT: you MUST ask the user for explicit confirmation in the conversation BEFORE calling this tool. Never auto-approve - always present the flagged action and wait for the user to response.",

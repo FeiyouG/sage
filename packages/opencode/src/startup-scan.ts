@@ -3,6 +3,7 @@
  * Scans installed OpenCode plugins for threats on session startup.
  */
 
+import { dirname, join } from "node:path";
 import {
 	checkForUpdate,
 	computeConfigHash,
@@ -45,10 +46,11 @@ async function runScan(
 	const version = getSageVersion();
 	logger.info(`Sage plugin scan started (${context})`, { threatsDir, allowlistsDir });
 
-	const [threats, trustedDomains, versionCheck] = await Promise.all([
+	const [threats, trustedDomains, versionCheck, sageConfig] = await Promise.all([
 		loadThreats(threatsDir, logger),
 		loadTrustedDomains(allowlistsDir, logger),
 		checkForUpdate(version, logger),
+		loadConfig(undefined, logger),
 	]);
 
 	let banner = formatStartupClean(version, versionCheck);
@@ -73,7 +75,9 @@ async function runScan(
 	});
 
 	const configHash = await computeConfigHash("", threatsDir, allowlistsDir);
-	const cache = await loadScanCache(configHash, undefined, logger);
+	const cacheDir = dirname(resolvePath(sageConfig.cache.path));
+	const pluginScanCachePath = join(cacheDir, "plugin_scan_cache.json");
+	const cache = await loadScanCache(configHash, pluginScanCachePath, logger);
 	const resultsWithFindings: PluginScanResult[] = [];
 	let cacheModified = false;
 	let scannedCount = 0;
@@ -116,7 +120,7 @@ async function runScan(
 	}
 
 	if (cacheModified) {
-		await saveScanCache(cache, undefined, logger);
+		await saveScanCache(cache, pluginScanCachePath, logger);
 	}
 
 	logger.info(
@@ -125,7 +129,6 @@ async function runScan(
 
 	// Log plugin scan findings to audit log (fail-open)
 	try {
-		const sageConfig = await loadConfig(undefined, logger);
 		for (const result of resultsWithFindings) {
 			await logPluginScan(
 				sageConfig.logging,
